@@ -11,6 +11,81 @@ let CARDS = [];
 let currentIndex = 0;
 
 // ============================================================================
+// IMAGES — Récupération depuis YGOPRODeck par nom
+// ============================================================================
+const imageCache = {};
+
+async function fetchCardImage(cardName) {
+  if (imageCache[cardName] !== undefined) return imageCache[cardName];
+
+  const lsKey = 'img_' + cardName;
+  try {
+    const cached = localStorage.getItem(lsKey);
+    if (cached) {
+      imageCache[cardName] = cached;
+      return cached;
+    }
+  } catch (e) {}
+
+  try {
+    const url = `https://db.ygoprodeck.com/api/v7/cardinfo.php?name=${encodeURIComponent(cardName)}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      imageCache[cardName] = null;
+      return null;
+    }
+    const data = await res.json();
+    const imgUrl = data.data?.[0]?.card_images?.[0]?.image_url_cropped
+                || data.data?.[0]?.card_images?.[0]?.image_url
+                || null;
+    imageCache[cardName] = imgUrl;
+    if (imgUrl) {
+      try { localStorage.setItem(lsKey, imgUrl); } catch (e) {}
+    }
+    return imgUrl;
+  } catch (err) {
+    imageCache[cardName] = null;
+    return null;
+  }
+}
+
+async function loadCardImage(card) {
+  const imgEl = document.getElementById('cardImg');
+  if (!imgEl) return;
+
+  // Reset
+  imgEl.removeAttribute('src');
+  imgEl.style.display = 'none';
+
+  const parent = imgEl.parentElement;
+
+  // Créer le placeholder s'il n'existe pas
+  let ph = parent.querySelector('.img-placeholder');
+  if (!ph) {
+    ph = document.createElement('div');
+    ph.className = 'img-placeholder';
+    ph.textContent = '🃏';
+    ph.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:48px;color:#555;';
+    parent.style.position = 'relative';
+    parent.appendChild(ph);
+  }
+
+  // Chercher l'image par nom EN
+  const imgUrl = await fetchCardImage(card.name_en);
+
+  // Vérifier qu'on est toujours sur la même carte
+  if (CARDS[currentIndex] !== card) return;
+
+  if (!imgUrl) return;
+
+  // Cacher le placeholder et afficher l'image
+  if (ph) ph.remove();
+
+  imgEl.src = imgUrl;
+  imgEl.style.display = 'block';
+}
+
+// ============================================================================
 // CHARGEMENT
 // ============================================================================
 async function loadCards() {
@@ -59,9 +134,8 @@ function extractCards(db) {
   const textsResult = db.exec("SELECT id, name, desc FROM texts")[0];
   if (!textsResult) return {};
 
-  const texts = textsResult.values; // [[id, name, desc], ...]
+  const texts = textsResult.values;
 
-  // Récupérer aussi les données de la table datas (pour les infos)
   let datasResult;
   try {
     datasResult = db.exec("SELECT id, type, atk, def, level, race, attribute FROM datas")[0];
@@ -124,7 +198,6 @@ function mergeCards(enCards, frCards) {
     });
   }
 
-  // Trier par ID
   result.sort((a, b) => parseInt(a.id) - parseInt(b.id));
   return result;
 }
@@ -136,15 +209,8 @@ function render() {
   if (!CARDS.length) return;
   const card = CARDS[currentIndex];
 
-  // Image (placeholder pour l'instant)
-  const imgEl = document.getElementById('cardImg');
-  if (card.image) {
-    imgEl.src = card.image;
-    imgEl.style.display = 'block';
-  } else {
-    imgEl.removeAttribute('src');
-    imgEl.textContent = '🃏';
-  }
+  // Image (chargée depuis YGOPRODeck)
+  loadCardImage(card);
 
   // Infos
   document.getElementById('infoId').textContent = card.id || '—';
