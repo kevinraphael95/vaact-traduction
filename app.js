@@ -1,8 +1,8 @@
 // ============================================================================
 // CONFIG
 // ============================================================================
-const CDB_EN_URL = 'data/VAACT S1.cdb';      // ton cdb original
-const CDB_FR_URL = 'data/VAACT S1_fr.cdb';   // ton cdb traduit
+const CDB_EN_URL = 'data/VAACT_S1.cdb';      // ton cdb original
+const CDB_FR_URL = 'data/VAACT_S1_fr.cdb';   // ton cdb traduit
 
 // ============================================================================
 // ÉTAT
