@@ -5,10 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VAACT Trad</title>
 <link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
 </head>
 <body>
 
-<!-- TOPBAR -->
+<div class="loading-screen" id="loadingScreen">
+  <div class="loading-box">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">Chargement des cartes…</div>
+  </div>
+</div>
+
 <div class="topbar">
   <div class="topbar-inner">
     <div class="logo">
@@ -22,11 +29,9 @@
   </div>
 </div>
 
-<!-- CONTAINER -->
-<div class="container">
+<div class="container" id="mainContainer" style="display:none;">
   <div class="main-grid">
 
-    <!-- COLONNE GAUCHE -->
     <div class="card-visual">
       <div class="card-image">
         <img id="cardImg" alt="">
@@ -40,7 +45,6 @@
       </div>
     </div>
 
-    <!-- COLONNE DROITE -->
     <div class="content-col">
       <div class="section">
         <div class="section-title">📖 Texte original (anglais)</div>
@@ -56,8 +60,7 @@
   </div>
 </div>
 
-<!-- NAV BAR -->
-<div class="nav-bar">
+<div class="nav-bar" id="navBar" style="display:none;">
   <div class="nav-inner">
     <button class="nav-btn" id="prevBtn">← Précédent</button>
     <span class="nav-center" id="navCenter">1 / 1</span>
