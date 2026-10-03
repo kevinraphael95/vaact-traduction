@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VAACT Trad</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="logo">
+      <div class="logo-icon">⚔️</div>
+      VAACT Trad
+    </div>
+    <div class="topbar-center">
+      <input type="text" class="search-input" id="searchInput" placeholder="Chercher une carte…">
+      <button class="btn-random" id="randomBtn">🎲 Aléatoire</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONTAINER -->
+<div class="container">
+  <div class="main-grid">
+
+    <!-- COLONNE GAUCHE -->
+    <div class="card-visual">
+      <div class="card-image">
+        <img id="cardImg" alt="">
+      </div>
+      <div class="card-info">
+        <div class="info-row"><span class="label">ID</span><span class="value" id="infoId">—</span></div>
+        <div class="info-row"><span class="label">Type</span><span class="value" id="infoType">—</span></div>
+        <div class="info-row"><span class="label">Attribut</span><span class="value" id="infoAttr">—</span></div>
+        <div class="info-row"><span class="label">ATK / DEF</span><span class="value" id="infoStats">—</span></div>
+        <div class="info-row"><span class="label">Niveau</span><span class="value" id="infoLevel">—</span></div>
+      </div>
+    </div>
+
+    <!-- COLONNE DROITE -->
+    <div class="content-col">
+      <div class="section">
+        <div class="section-title">📖 Texte original (anglais)</div>
+        <div class="original-box">
+          <div class="original-name" id="origName">—</div>
+          <div class="original-desc" id="origDesc">—</div>
+        </div>
+      </div>
+
+      <div id="translationSection"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- NAV BAR -->
+<div class="nav-bar">
+  <div class="nav-inner">
+    <button class="nav-btn" id="prevBtn">← Précédent</button>
+    <span class="nav-center" id="navCenter">1 / 1</span>
+    <button class="nav-btn" id="nextBtn">Suivant →</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
