@@ -57,6 +57,19 @@ function typeToString(type) {
   return parts.length ? parts.join(' / ') : `Type ${type}`;
 }
 
+/**
+ * Convertit les stats ATK/DEF.
+ * -2 = valeur variable "?" (ex: Slifer, Obelisk)
+ * -1 = valeur spéciale (rare)
+ */
+function formatStat(value) {
+  if (value === null || value === undefined) return '—';
+  if (value === -2) return '?';
+  if (value === -1) return '?';
+  if (value < 0) return '0';
+  return String(value);
+}
+
 // ============================================================================
 // IMAGES — Récupération depuis YGOPRODeck par nom
 // ============================================================================
@@ -253,7 +266,7 @@ function render() {
   document.getElementById('infoType').textContent = typeToString(card.type);
   document.getElementById('infoAttr').textContent = attributeToString(card.attribute);
   document.getElementById('infoStats').textContent =
-    (card.atk ?? '—') + ' / ' + (card.def ?? '—');
+    formatStat(card.atk) + ' / ' + formatStat(card.def);
   document.getElementById('infoLevel').textContent = card.level ?? '—';
 
   document.getElementById('origName').textContent = card.name_en || '—';
