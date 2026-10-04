@@ -77,9 +77,10 @@ body {
   font-size: 16px;
   box-shadow: 0 2px 6px rgba(74, 127, 214, 0.3);
 }
-.topbar-center { flex: 1; display: flex; gap: 8px; max-width: 500px; }
+.topbar-center { flex: 1; display: flex; gap: 8px; max-width: 550px; }
 .search-input {
   flex: 1;
+  min-width: 120px;
   padding: 9px 14px;
   border: 1px solid #d0d5dc;
   border-radius: 8px;
@@ -127,6 +128,64 @@ body {
 .btn-theme:hover {
   border-color: #4a7fd6;
   background: #f7f8fa;
+}
+
+/* ============================================================================
+   FILTRE VAACT
+   ============================================================================ */
+.filter-vaact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 12px;
+  background: #fff;
+  border: 1px solid #d0d5dc;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.filter-vaact:hover {
+  border-color: #4a7fd6;
+  color: #4a7fd6;
+  background: #f7f8fa;
+}
+.filter-vaact input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 2px solid #d0d5dc;
+  background: #fff;
+  cursor: pointer;
+  margin: 0;
+  position: relative;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.filter-vaact input[type="checkbox"]:hover {
+  border-color: #4a7fd6;
+}
+.filter-vaact input[type="checkbox"]:checked {
+  background: #4a7fd6;
+  border-color: #4a7fd6;
+}
+.filter-vaact input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 4px;
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }
 
 /* ============================================================================
@@ -271,6 +330,7 @@ body {
 }
 .badge-source.yugipedia { background: #f0e8fa; color: #7a4aa8; }
 .badge-source.manual { background: #e8f0fa; color: #2a5aa8; }
+.badge-source.vaact { background: #fff0d4; color: #b07000; }
 
 .trans-votes { display: flex; gap: 6px; align-items: center; }
 .vote-btn {
@@ -536,6 +596,15 @@ body {
     order: 3;
   }
 
+  /* Filtre VAACT sur mobile : juste la case, pas de texte */
+  .filter-vaact {
+    padding: 9px 10px;
+    font-size: 12px;
+  }
+  .filter-vaact span {
+    display: none;
+  }
+
   .container { padding: 0 12px; margin: 16px auto; }
 
   .nav-bar { padding: 10px 12px; }
@@ -599,6 +668,28 @@ body {
   border-color: #5a8fe6;
 }
 
+[data-theme="dark"] .filter-vaact {
+  background: #252530;
+  border-color: #2e2e3c;
+  color: #aaa;
+}
+[data-theme="dark"] .filter-vaact:hover {
+  background: #2a2a38;
+  border-color: #5a8fe6;
+  color: #5a8fe6;
+}
+[data-theme="dark"] .filter-vaact input[type="checkbox"] {
+  background: #1e1e28;
+  border-color: #2e2e3c;
+}
+[data-theme="dark"] .filter-vaact input[type="checkbox"]:hover {
+  border-color: #5a8fe6;
+}
+[data-theme="dark"] .filter-vaact input[type="checkbox"]:checked {
+  background: #5a8fe6;
+  border-color: #5a8fe6;
+}
+
 [data-theme="dark"] .card-visual,
 [data-theme="dark"] .section,
 [data-theme="dark"] .translation {
@@ -627,6 +718,10 @@ body {
 [data-theme="dark"] .badge-source.manual {
   background: rgba(90, 143, 230, 0.15);
   color: #7aa8e8;
+}
+[data-theme="dark"] .badge-source.vaact {
+  background: rgba(200, 140, 30, 0.18);
+  color: #e0a850;
 }
 
 [data-theme="dark"] .vote-btn {
