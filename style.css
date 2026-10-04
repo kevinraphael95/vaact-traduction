@@ -107,6 +107,28 @@ body {
 }
 .btn-random:hover { border-color: #4a7fd6; color: #4a7fd6; background: #f7f8fa; }
 
+/* Bouton thème */
+.btn-theme {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: #fff;
+  border: 1px solid #d0d5dc;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.btn-theme:hover {
+  border-color: #4a7fd6;
+  background: #f7f8fa;
+}
+
 /* ============================================================================
    CONTAINER + LAYOUT
    ============================================================================ */
@@ -456,13 +478,11 @@ body {
 @media (max-width: 800px) {
   body { padding-bottom: 90px; }
 
-  /* 1 seule colonne */
   .main-grid { 
     grid-template-columns: 1fr; 
     gap: 16px;
   }
 
-  /* Carte visuelle : image à gauche, infos à droite */
   .card-visual {
     position: static;
     max-width: 100%;
@@ -473,7 +493,6 @@ body {
     align-items: flex-start;
   }
 
-  /* Image plus petite et carrée */
   .card-image {
     width: 140px;
     height: 140px;
@@ -483,7 +502,6 @@ body {
     font-size: 32px;
   }
 
-  /* Infos prennent le reste de la place */
   .card-info {
     flex: 1;
     min-width: 0;
@@ -497,7 +515,6 @@ body {
   .info-row .label { font-size: 9px; }
   .info-row .value { font-size: 11px; }
 
-  /* Sections plus compactes */
   .section { padding: 16px; }
   .translation { padding: 14px; }
   .trans-name { font-size: 15px; }
@@ -505,7 +522,6 @@ body {
   .original-desc { font-size: 11px; }
   .original-name { font-size: 13px; }
 
-  /* Topbar plus compacte */
   .topbar { padding: 10px 0; }
   .topbar-inner {
     padding: 0 12px;
@@ -520,10 +536,8 @@ body {
     order: 3;
   }
 
-  /* Container moins large */
   .container { padding: 0 12px; margin: 16px auto; }
 
-  /* Nav bar plus compacte */
   .nav-bar { padding: 10px 12px; }
   .nav-btn {
     padding: 9px 14px;
@@ -543,3 +557,149 @@ body {
   .nav-btn { padding: 8px 10px; font-size: 11px; }
   .btn-random { padding: 9px 12px; font-size: 12px; }
 }
+
+/* ============================================================================
+   THÈME SOMBRE
+   ============================================================================ */
+[data-theme="dark"] body {
+  background: #16161e;
+  color: #e4e4ea;
+}
+
+[data-theme="dark"] .topbar {
+  background: #1a1a24;
+  border-bottom-color: #2a2a38;
+}
+[data-theme="dark"] .search-input {
+  background: #252530;
+  border-color: #2e2e3c;
+  color: #e4e4ea;
+}
+[data-theme="dark"] .search-input::placeholder { color: #5a5a70; }
+[data-theme="dark"] .search-input:focus {
+  background: #1e1e28;
+  border-color: #5a8fe6;
+}
+[data-theme="dark"] .btn-random {
+  background: #252530;
+  border-color: #2e2e3c;
+  color: #aaa;
+}
+[data-theme="dark"] .btn-random:hover {
+  background: #2a2a38;
+  border-color: #5a8fe6;
+  color: #5a8fe6;
+}
+[data-theme="dark"] .btn-theme {
+  background: #252530;
+  border-color: #2e2e3c;
+}
+[data-theme="dark"] .btn-theme:hover {
+  background: #2a2a38;
+  border-color: #5a8fe6;
+}
+
+[data-theme="dark"] .card-visual,
+[data-theme="dark"] .section,
+[data-theme="dark"] .translation {
+  background: #1e1e28;
+  border-color: #2e2e3c;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .info-row { background: #252530; }
+[data-theme="dark"] .info-row .label { color: #8888a0; }
+[data-theme="dark"] .info-row .value { color: #e4e4ea; }
+
+[data-theme="dark"] .section-title { color: #5a5a70; }
+
+[data-theme="dark"] .original-box {
+  background: #252530;
+  border-left-color: #5a8fe6;
+}
+[data-theme="dark"] .original-name { color: #e4e4ea; }
+[data-theme="dark"] .original-desc { color: #a0a0b0; }
+
+[data-theme="dark"] .translation { border-left-color: #5a8fe6; }
+[data-theme="dark"] .trans-name { color: #e4e4ea; }
+[data-theme="dark"] .trans-desc { color: #c0c0d0; }
+
+[data-theme="dark"] .badge-source.manual {
+  background: rgba(90, 143, 230, 0.15);
+  color: #7aa8e8;
+}
+
+[data-theme="dark"] .vote-btn {
+  background: #252530;
+  border-color: #2e2e3c;
+  color: #8888a0;
+}
+[data-theme="dark"] .vote-btn:hover {
+  border-color: #5a8fe6;
+  color: #5a8fe6;
+}
+[data-theme="dark"] .vote-btn.voted-up {
+  background: rgba(90, 143, 230, 0.15);
+  border-color: #5a8fe6;
+  color: #7aa8e8;
+}
+[data-theme="dark"] .vote-btn.voted-down {
+  background: rgba(214, 74, 74, 0.15);
+  border-color: #d64a4a;
+  color: #e07a7a;
+}
+
+[data-theme="dark"] .comments-footer { border-top-color: #2a2a38; }
+[data-theme="dark"] .comments-section { border-top-color: #2a2a38; }
+[data-theme="dark"] .comment { border-bottom-color: #2a2a38; }
+[data-theme="dark"] .comment-author { color: #7aa8e8; }
+[data-theme="dark"] .comment-text { color: #c0c0d0; }
+[data-theme="dark"] .comment-score { color: #8888a0; }
+
+[data-theme="dark"] .comment-form { border-top-color: #2a2a38; }
+[data-theme="dark"] .comment-form input,
+[data-theme="dark"] .comment-form textarea {
+  background: #252530;
+  border-color: #2e2e3c;
+  color: #e4e4ea;
+}
+[data-theme="dark"] .comment-form input::placeholder,
+[data-theme="dark"] .comment-form textarea::placeholder { color: #5a5a70; }
+[data-theme="dark"] .comment-form input:focus,
+[data-theme="dark"] .comment-form textarea:focus {
+  background: #1e1e28;
+  border-color: #5a8fe6;
+}
+
+[data-theme="dark"] .btn-secondary {
+  background: #252530;
+  border-color: #2e2e3c;
+  color: #aaa;
+}
+[data-theme="dark"] .btn-secondary:hover {
+  border-color: #5a8fe6;
+  color: #5a8fe6;
+}
+[data-theme="dark"] .btn-primary { background: #5a8fe6; }
+[data-theme="dark"] .btn-primary:hover { background: #4a7fd6; }
+
+[data-theme="dark"] .nav-bar {
+  background: #1a1a24;
+  border-top-color: #2a2a38;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.3);
+}
+[data-theme="dark"] .nav-btn {
+  background: #252530;
+  border-color: #2e2e3c;
+  color: #aaa;
+}
+[data-theme="dark"] .nav-btn:hover:not(:disabled) {
+  background: #2a2a38;
+  border-color: #5a8fe6;
+  color: #5a8fe6;
+}
+[data-theme="dark"] .nav-center { color: #8888a0; }
+
+[data-theme="dark"] .loading-screen { background: #16161e; }
+[data-theme="dark"] .loading-text { color: #8888a0; }
+[data-theme="dark"] .spinner { border-color: #2e2e3c; border-top-color: #5a8fe6; }
