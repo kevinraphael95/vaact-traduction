@@ -69,7 +69,7 @@ function formatStat(value) {
 // FILTRE VAACT
 // ============================================================================
 function isVaactCard(card) {
-  return (card.desc_fr || '').trim().startsWith('(VAACT)');
+  return (card.desc_fr || '').trim().startsWith('(VAACT');
 }
 
 function getFilteredCards() {
