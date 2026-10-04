@@ -57,17 +57,27 @@ function typeToString(type) {
   return parts.length ? parts.join(' / ') : `Type ${type}`;
 }
 
-/**
- * Convertit les stats ATK/DEF.
- * -2 = valeur variable "?" (ex: Slifer, Obelisk)
- * -1 = valeur spéciale (rare)
- */
 function formatStat(value) {
   if (value === null || value === undefined) return '—';
   if (value === -2) return '?';
   if (value === -1) return '?';
   if (value < 0) return '0';
   return String(value);
+}
+
+// ============================================================================
+// FILTRE VAACT
+// ============================================================================
+function isVaactCard(card) {
+  return (card.desc_fr || '').trim().startsWith('(VAACT)');
+}
+
+function getFilteredCards() {
+  const checkbox = document.getElementById('vaactFilter');
+  if (checkbox && checkbox.checked) {
+    return CARDS.filter(isVaactCard);
+  }
+  return CARDS;
 }
 
 // ============================================================================
@@ -129,7 +139,7 @@ async function loadCardImage(card) {
   }
 
   const imgUrl = await fetchCardImage(card.name_en);
-  if (CARDS[currentIndex] !== card) return;
+  if (getFilteredCards()[currentIndex] !== card) return;
   if (!imgUrl) return;
 
   if (ph) ph.remove();
@@ -258,7 +268,12 @@ function mergeCards(enCards, frCards) {
 // ============================================================================
 function render() {
   if (!CARDS.length) return;
-  const card = CARDS[currentIndex];
+  const filtered = getFilteredCards();
+  if (!filtered.length) return;
+
+  if (currentIndex >= filtered.length) currentIndex = 0;
+
+  const card = filtered[currentIndex];
 
   loadCardImage(card);
 
@@ -274,9 +289,9 @@ function render() {
 
   renderTranslation(card);
 
-  document.getElementById('navCenter').textContent = `${currentIndex + 1} / ${CARDS.length}`;
+  document.getElementById('navCenter').textContent = `${currentIndex + 1} / ${filtered.length}`;
   document.getElementById('prevBtn').disabled = currentIndex === 0;
-  document.getElementById('nextBtn').disabled = currentIndex === CARDS.length - 1;
+  document.getElementById('nextBtn').disabled = currentIndex === filtered.length - 1;
 }
 
 function renderTranslation(card) {
@@ -287,12 +302,14 @@ function renderTranslation(card) {
   const downClass = vote === 'down' ? 'voted-down' : '';
   const up = card.up || 0;
   const down = card.down || 0;
+  const isVaact = isVaactCard(card);
 
   container.innerHTML = `
     <div class="translation">
       <div class="trans-head">
         <div class="trans-meta">
           <span class="badge-source manual">Traduction</span>
+          ${isVaact ? `<span class="badge-source vaact">VAACT</span>` : ''}
         </div>
         <div class="trans-votes">
           <button class="vote-btn ${upClass}" data-vote="up">▲ ${up}</button>
@@ -387,7 +404,9 @@ function removeVote(id) {
   localStorage.setItem(VOTES_KEY, JSON.stringify(x));
 }
 function handleVote(btn) {
-  const card = CARDS[currentIndex];
+  const filtered = getFilteredCards();
+  const card = filtered[currentIndex];
+  if (!card) return;
   const id = card.id;
   const vote = btn.dataset.vote;
   const votes = getVotes();
@@ -423,8 +442,9 @@ function handleCommentVote(btn) {
   const id = parseInt(btn.dataset.commentId);
   const vote = btn.dataset.vote;
   const votes = getCommentVotes();
-  const card = CARDS[currentIndex];
-  if (!card.comments) return;
+  const filtered = getFilteredCards();
+  const card = filtered[currentIndex];
+  if (!card || !card.comments) return;
   const comment = card.comments.find(c => c.id === id);
   if (!comment) return;
 
@@ -461,7 +481,9 @@ function handleCommentSubmit() {
     setUser(document.getElementById('commentAuthor').value.trim());
   }
 
-  const card = CARDS[currentIndex];
+  const filtered = getFilteredCards();
+  const card = filtered[currentIndex];
+  if (!card) return;
   if (!card.comments) card.comments = [];
   card.comments.push({ id: Date.now(), author, text, up: 0, down: 0 });
   render();
@@ -478,16 +500,19 @@ document.getElementById('prevBtn').addEventListener('click', () => {
   if (currentIndex > 0) { currentIndex--; render(); }
 });
 document.getElementById('nextBtn').addEventListener('click', () => {
-  if (currentIndex < CARDS.length - 1) { currentIndex++; render(); }
+  const filtered = getFilteredCards();
+  if (currentIndex < filtered.length - 1) { currentIndex++; render(); }
 });
 document.getElementById('randomBtn').addEventListener('click', () => {
-  currentIndex = Math.floor(Math.random() * CARDS.length);
+  const filtered = getFilteredCards();
+  currentIndex = Math.floor(Math.random() * filtered.length);
   render();
 });
 document.addEventListener('keydown', (e) => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  const filtered = getFilteredCards();
   if (e.key === 'ArrowLeft' && currentIndex > 0) { currentIndex--; render(); }
-  else if (e.key === 'ArrowRight' && currentIndex < CARDS.length - 1) { currentIndex++; render(); }
+  else if (e.key === 'ArrowRight' && currentIndex < filtered.length - 1) { currentIndex++; render(); }
 });
 
 // ============================================================================
@@ -497,12 +522,21 @@ document.getElementById('searchInput').addEventListener('keydown', (e) => {
   if (e.key !== 'Enter') return;
   const q = e.target.value.trim().toLowerCase();
   if (!q) return;
-  const found = CARDS.findIndex(c =>
+  const filtered = getFilteredCards();
+  const found = filtered.findIndex(c =>
     (c.name_en || '').toLowerCase().includes(q)
     || (c.name_fr || '').toLowerCase().includes(q)
     || (c.id || '').includes(q)
   );
   if (found >= 0) { currentIndex = found; render(); }
+});
+
+// ============================================================================
+// FILTRE VAACT — event
+// ============================================================================
+document.getElementById('vaactFilter').addEventListener('change', () => {
+  currentIndex = 0;
+  render();
 });
 
 // ============================================================================
