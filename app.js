@@ -53,13 +53,11 @@ async function loadCardImage(card) {
   const imgEl = document.getElementById('cardImg');
   if (!imgEl) return;
 
-  // Reset
   imgEl.removeAttribute('src');
   imgEl.style.display = 'none';
 
   const parent = imgEl.parentElement;
 
-  // Créer le placeholder s'il n'existe pas
   let ph = parent.querySelector('.img-placeholder');
   if (!ph) {
     ph = document.createElement('div');
@@ -70,17 +68,11 @@ async function loadCardImage(card) {
     parent.appendChild(ph);
   }
 
-  // Chercher l'image par nom EN
   const imgUrl = await fetchCardImage(card.name_en);
-
-  // Vérifier qu'on est toujours sur la même carte
   if (CARDS[currentIndex] !== card) return;
-
   if (!imgUrl) return;
 
-  // Cacher le placeholder et afficher l'image
   if (ph) ph.remove();
-
   imgEl.src = imgUrl;
   imgEl.style.display = 'block';
 }
@@ -113,7 +105,6 @@ async function loadCards() {
     CARDS = mergeCards(enCards, frCards);
     console.log(`✅ ${CARDS.length} cartes chargées`);
 
-    // Afficher le site
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('mainContainer').style.display = 'block';
     document.getElementById('navBar').style.display = 'block';
@@ -209,10 +200,8 @@ function render() {
   if (!CARDS.length) return;
   const card = CARDS[currentIndex];
 
-  // Image (chargée depuis YGOPRODeck)
   loadCardImage(card);
 
-  // Infos
   document.getElementById('infoId').textContent = card.id || '—';
   document.getElementById('infoType').textContent = card.type || '—';
   document.getElementById('infoAttr').textContent = card.attribute || '—';
@@ -220,14 +209,11 @@ function render() {
     (card.atk ?? '—') + ' / ' + (card.def ?? '—');
   document.getElementById('infoLevel').textContent = card.level ?? '—';
 
-  // Original
   document.getElementById('origName').textContent = card.name_en || '—';
   document.getElementById('origDesc').textContent = card.desc_en || '—';
 
-  // Traduction
   renderTranslation(card);
 
-  // Nav
   document.getElementById('navCenter').textContent = `${currentIndex + 1} / ${CARDS.length}`;
   document.getElementById('prevBtn').disabled = currentIndex === 0;
   document.getElementById('nextBtn').disabled = currentIndex === CARDS.length - 1;
@@ -467,6 +453,31 @@ function esc(s) {
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[c]));
 }
+
+// ============================================================================
+// THÈME SOMBRE
+// ============================================================================
+const THEME_KEY = 'vaact-theme';
+
+(function initTheme() {
+  const saved = localStorage.getItem(THEME_KEY);
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = saved || (prefersDark ? 'dark' : 'light');
+  applyTheme(theme);
+})();
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  localStorage.setItem(THEME_KEY, next);
+  applyTheme(next);
+});
 
 // ============================================================================
 // INIT
