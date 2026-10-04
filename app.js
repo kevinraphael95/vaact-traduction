@@ -1,14 +1,61 @@
 // ============================================================================
 // CONFIG
 // ============================================================================
-const CDB_EN_URL = 'data/VAACT_S1.cdb';      // ton cdb original
-const CDB_FR_URL = 'data/VAACT_S1_fr.cdb';   // ton cdb traduit
+const CDB_EN_URL = 'data/VAACT_S1.cdb';
+const CDB_FR_URL = 'data/VAACT_S1_fr.cdb';
 
 // ============================================================================
 // ÉTAT
 // ============================================================================
 let CARDS = [];
 let currentIndex = 0;
+
+// ============================================================================
+// TRADUCTION DES CODES YGOPRO
+// ============================================================================
+const ATTRIBUTES = {
+  1: 'EARTH', 2: 'WATER', 4: 'FIRE', 8: 'WIND',
+  16: 'LIGHT', 32: 'DARK', 64: 'DIVINE',
+};
+
+function attributeToString(attr) {
+  if (!attr) return '—';
+  return ATTRIBUTES[attr] || `Attr${attr}`;
+}
+
+const TYPES = [
+  { v: 1,        label: 'Monstre' },
+  { v: 2,        label: 'Magie' },
+  { v: 4,        label: 'Piège' },
+  { v: 16,       label: 'Normal' },
+  { v: 32,       label: 'Effet' },
+  { v: 64,       label: 'Fusion' },
+  { v: 128,      label: 'Rituel' },
+  { v: 256,      label: 'Spirit' },
+  { v: 512,      label: 'Union' },
+  { v: 1024,     label: 'Gemini' },
+  { v: 2048,     label: 'Tuner' },
+  { v: 4096,     label: 'Synchro' },
+  { v: 16384,    label: 'Quick-Play' },
+  { v: 65536,    label: 'Continu' },
+  { v: 131072,   label: 'Équipement' },
+  { v: 262144,   label: 'Terrain' },
+  { v: 524288,   label: 'Compteur' },
+  { v: 1048576,  label: 'Flip' },
+  { v: 2097152,  label: 'Toon' },
+  { v: 4194304,  label: 'Xyz' },
+  { v: 8388608,  label: 'Pendule' },
+  { v: 16777216, label: 'Lien' },
+];
+
+function typeToString(type) {
+  if (!type) return '—';
+  const parts = [];
+  for (const t of TYPES) {
+    if (type & t.v) parts.push(t.label);
+  }
+  return parts.length ? parts.join(' / ') : `Type ${type}`;
+}
 
 // ============================================================================
 // IMAGES — Récupération depuis YGOPRODeck par nom
@@ -203,8 +250,8 @@ function render() {
   loadCardImage(card);
 
   document.getElementById('infoId').textContent = card.id || '—';
-  document.getElementById('infoType').textContent = card.type || '—';
-  document.getElementById('infoAttr').textContent = card.attribute || '—';
+  document.getElementById('infoType').textContent = typeToString(card.type);
+  document.getElementById('infoAttr').textContent = attributeToString(card.attribute);
   document.getElementById('infoStats').textContent =
     (card.atk ?? '—') + ' / ' + (card.def ?? '—');
   document.getElementById('infoLevel').textContent = card.level ?? '—';
