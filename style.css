@@ -77,7 +77,13 @@ body {
   font-size: 16px;
   box-shadow: 0 2px 6px rgba(74, 127, 214, 0.3);
 }
-.topbar-center { flex: 1; display: flex; gap: 8px; max-width: 600px; }
+.topbar-center {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+  max-width: 700px;
+  align-items: center;
+}
 
 .search-input {
   flex: 1;
@@ -132,7 +138,7 @@ body {
 }
 
 /* ============================================================================
-   FILTRE VAACT
+   FILTRES (VAACT + Incomplètes)
    ============================================================================ */
 .filter-vaact {
   display: inline-flex;
@@ -185,6 +191,16 @@ body {
   border: solid #fff;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
+}
+
+/* Filtre « Incomplètes » — accent rouge quand coché */
+.filter-vaact input#incompleteFilter:checked {
+  background: #c0392b;
+  border-color: #c0392b;
+}
+.filter-vaact input#incompleteFilter:checked + span {
+  color: #c0392b;
+  font-weight: 700;
 }
 
 /* ============================================================================
@@ -330,6 +346,12 @@ body {
 .badge-source.yugipedia { background: #f0e8fa; color: #7a4aa8; }
 .badge-source.vaact { background: #fff0d4; color: #b07000; }
 
+/* Badge d'avertissement — carte incomplète */
+.badge-source.missing {
+  background: #fae0dd;
+  color: #a82a1a;
+}
+
 .trans-votes { display: flex; gap: 6px; align-items: center; }
 .vote-btn {
   display: flex;
@@ -352,139 +374,15 @@ body {
 .trans-name { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
 .trans-desc { font-size: 14px; color: #333; line-height: 1.6; white-space: pre-wrap; }
 
-/* ============================================================================
-   COMMENTAIRES
-   ============================================================================ */
-.comments-footer {
-  margin-top: 18px;
-  padding-top: 14px;
-  border-top: 1px solid #eef0f4;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
+/* Carte incomplète : bordure rouge + fond légèrement teinté */
+.translation.incomplete {
+  border-left-color: #c0392b;
+  background: #fdf6f5;
 }
-.comments-toggle {
-  background: none;
-  border: none;
-  color: #4a7fd6;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-  padding: 4px 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.translation.incomplete .badge-source.manual {
+  background: #f0e0dd;
+  color: #8a2a1a;
 }
-.comments-toggle:hover { text-decoration: underline; }
-.comments-toggle .arrow {
-  display: inline-block;
-  transition: transform 0.2s;
-  font-size: 10px;
-}
-.comments-toggle.open .arrow { transform: rotate(90deg); }
-
-.comments-section {
-  display: none;
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid #eef0f4;
-}
-.comments-section.open { display: block; }
-
-.comment {
-  display: flex;
-  gap: 10px;
-  padding: 12px 0;
-  border-bottom: 1px solid #f0f2f5;
-}
-.comment:last-child { border-bottom: none; }
-.comment-votes {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  flex-shrink: 0;
-}
-.comment-vote-btn {
-  background: none;
-  border: none;
-  color: #c0c4cc;
-  cursor: pointer;
-  font-size: 12px;
-  padding: 2px 4px;
-  font-family: inherit;
-}
-.comment-vote-btn:hover { color: #4a7fd6; }
-.comment-vote-btn.voted-up { color: #2a5aa8; }
-.comment-vote-btn.voted-down { color: #a82a2a; }
-.comment-score { font-size: 11px; font-weight: 700; color: #888; }
-.comment-body { flex: 1; }
-.comment-author {
-  font-size: 12px;
-  font-weight: 700;
-  color: #4a7fd6;
-  margin-bottom: 3px;
-}
-.comment-text { font-size: 13px; color: #444; line-height: 1.5; }
-
-.comment-form {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #eef0f4;
-}
-.comment-form input,
-.comment-form textarea {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #d0d5dc;
-  border-radius: 6px;
-  font-family: inherit;
-  font-size: 13px;
-  background: #f7f8fa;
-  margin-bottom: 8px;
-}
-.comment-form input:focus,
-.comment-form textarea:focus {
-  outline: none;
-  border-color: #4a7fd6;
-  background: #fff;
-}
-.comment-form textarea { min-height: 60px; resize: vertical; }
-.comment-form-actions { display: flex; gap: 8px; }
-.no-comments { color: #999; font-size: 13px; font-style: italic; padding: 8px 0; }
-
-/* ============================================================================
-   BOUTONS
-   ============================================================================ */
-.btn-primary {
-  padding: 8px 16px;
-  background: #4a7fd6;
-  border: none;
-  border-radius: 6px;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-}
-.btn-primary:hover {
-  background: #3a6fc6;
-  box-shadow: 0 2px 8px rgba(74, 127, 214, 0.3);
-}
-.btn-secondary {
-  padding: 8px 16px;
-  background: #fff;
-  border: 1px solid #d0d5dc;
-  border-radius: 6px;
-  color: #555;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-}
-.btn-secondary:hover { border-color: #4a7fd6; color: #4a7fd6; }
 
 /* ============================================================================
    NAV BAR
@@ -533,6 +431,10 @@ body {
 /* ============================================================================
    RESPONSIVE
    ============================================================================ */
+@media (max-width: 900px) {
+  .topbar-center { max-width: none; }
+}
+
 @media (max-width: 800px) {
   body { padding-bottom: 90px; }
 
@@ -582,10 +484,15 @@ body {
   }
   .logo { font-size: 16px; }
   .logo-icon { width: 28px; height: 28px; font-size: 14px; }
-  .topbar-center { max-width: none; width: 100%; order: 3; }
+  .topbar-center {
+    max-width: none;
+    width: 100%;
+    order: 3;
+    flex-wrap: wrap;
+  }
 
   .filter-vaact { padding: 9px 10px; font-size: 12px; }
-  .filter-vaact span { display: none; }
+  .filter-vaact span { display: inline; }
 
   .container { padding: 0 12px; margin: 16px auto; }
 
@@ -603,6 +510,9 @@ body {
   .trans-desc, .original-desc { font-size: 12px; }
   .nav-btn { padding: 8px 10px; font-size: 11px; }
   .btn-random { padding: 9px 12px; font-size: 12px; }
+
+  /* Sur très petits écrans, on masque le texte des filtres */
+  .filter-vaact span { display: none; }
 }
 
 /* ============================================================================
@@ -667,6 +577,13 @@ body {
   background: #5a8fe6;
   border-color: #5a8fe6;
 }
+[data-theme="dark"] .filter-vaact input#incompleteFilter:checked {
+  background: #e05a4a;
+  border-color: #e05a4a;
+}
+[data-theme="dark"] .filter-vaact input#incompleteFilter:checked + span {
+  color: #e07a6a;
+}
 
 [data-theme="dark"] .section,
 [data-theme="dark"] .translation,
@@ -679,6 +596,16 @@ body {
 [data-theme="dark"] .section,
 [data-theme="dark"] .translation {
   border-left-color: #5a8fe6;
+}
+
+/* Carte incomplète en mode sombre */
+[data-theme="dark"] .translation.incomplete {
+  border-left-color: #e05a4a;
+  background: #2a1c1c;
+}
+[data-theme="dark"] .translation.incomplete .badge-source.manual {
+  background: rgba(224, 90, 74, 0.18);
+  color: #e07a6a;
 }
 
 [data-theme="dark"] .info-row { background: #252530; }
@@ -701,6 +628,10 @@ body {
   background: rgba(200, 140, 30, 0.18);
   color: #e0a850;
 }
+[data-theme="dark"] .badge-source.missing {
+  background: rgba(224, 90, 74, 0.18);
+  color: #e07a6a;
+}
 
 [data-theme="dark"] .vote-btn {
   background: #252530;
@@ -721,40 +652,6 @@ body {
   border-color: #d64a4a;
   color: #e07a7a;
 }
-
-[data-theme="dark"] .comments-footer { border-top-color: #2a2a38; }
-[data-theme="dark"] .comments-section { border-top-color: #2a2a38; }
-[data-theme="dark"] .comment { border-bottom-color: #2a2a38; }
-[data-theme="dark"] .comment-author { color: #7aa8e8; }
-[data-theme="dark"] .comment-text { color: #c0c0d0; }
-[data-theme="dark"] .comment-score { color: #8888a0; }
-
-[data-theme="dark"] .comment-form { border-top-color: #2a2a38; }
-[data-theme="dark"] .comment-form input,
-[data-theme="dark"] .comment-form textarea {
-  background: #252530;
-  border-color: #2e2e3c;
-  color: #e4e4ea;
-}
-[data-theme="dark"] .comment-form input::placeholder,
-[data-theme="dark"] .comment-form textarea::placeholder { color: #5a5a70; }
-[data-theme="dark"] .comment-form input:focus,
-[data-theme="dark"] .comment-form textarea:focus {
-  background: #1e1e28;
-  border-color: #5a8fe6;
-}
-
-[data-theme="dark"] .btn-secondary {
-  background: #252530;
-  border-color: #2e2e3c;
-  color: #aaa;
-}
-[data-theme="dark"] .btn-secondary:hover {
-  border-color: #5a8fe6;
-  color: #5a8fe6;
-}
-[data-theme="dark"] .btn-primary { background: #5a8fe6; }
-[data-theme="dark"] .btn-primary:hover { background: #4a7fd6; }
 
 [data-theme="dark"] .nav-bar {
   background: #1a1a24;
