@@ -65,6 +65,7 @@ body {
   gap: 8px;
   flex-shrink: 0;
 }
+.logo-text { white-space: nowrap; }
 .logo-icon {
   width: 32px;
   height: 32px;
@@ -76,6 +77,7 @@ body {
   color: #fff;
   font-size: 16px;
   box-shadow: 0 2px 6px rgba(74, 127, 214, 0.3);
+  flex-shrink: 0;
 }
 .topbar-center {
   flex: 1;
@@ -83,6 +85,7 @@ body {
   gap: 8px;
   max-width: 700px;
   align-items: center;
+  justify-content: flex-end;
 }
 
 .search-input {
@@ -113,6 +116,12 @@ body {
   font-family: inherit;
   color: #555;
   white-space: nowrap;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s;
 }
 .btn-random:hover { border-color: #4a7fd6; color: #4a7fd6; background: #f7f8fa; }
 
@@ -135,6 +144,39 @@ body {
 .btn-theme:hover {
   border-color: #4a7fd6;
   background: #f7f8fa;
+}
+
+/* Bouton filtres mobile (☰) — caché par défaut, visible en mobile */
+.btn-mobile-filters {
+  display: none;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  background: #fff;
+  border: 1px solid #d0d5dc;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  font-family: inherit;
+  color: #555;
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.btn-mobile-filters:hover { border-color: #4a7fd6; color: #4a7fd6; }
+
+/* Pastille rouge si un filtre est actif */
+.btn-mobile-filters.active::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 8px;
+  height: 8px;
+  background: #c0392b;
+  border-radius: 50%;
+  border: 1.5px solid #fff;
 }
 
 /* ============================================================================
@@ -193,14 +235,67 @@ body {
   transform: rotate(45deg);
 }
 
-/* Filtre « Incomplètes » — accent rouge quand coché */
-.filter-vaact input#incompleteFilter:checked {
+/* Filtre « Incomplètes » — accent rouge quand coché (desktop + mobile) */
+.filter-vaact input#incompleteFilter:checked,
+.filter-vaact input#incompleteFilterMobile:checked {
   background: #c0392b;
   border-color: #c0392b;
 }
-.filter-vaact input#incompleteFilter:checked + span {
+.filter-vaact input#incompleteFilter:checked + span,
+.filter-vaact input#incompleteFilterMobile:checked + span {
   color: #c0392b;
   font-weight: 700;
+}
+
+/* ============================================================================
+   PANNEAU FILTRES MOBILE
+   ============================================================================ */
+.mobile-filters-panel {
+  display: none;
+  position: fixed;
+  top: 66px;
+  right: 12px;
+  background: #fff;
+  border: 1px solid #e0e4e8;
+  border-radius: 12px;
+  padding: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 50;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 200px;
+}
+.mobile-filters-panel.open { display: flex; }
+
+.mobile-filters-panel .filter-vaact {
+  width: 100%;
+  justify-content: flex-start;
+  height: 38px;
+  box-sizing: border-box;
+}
+
+.mobile-filters-panel .btn-theme-mobile {
+  width: 100%;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 0 12px;
+  background: #fff;
+  border: 1px solid #d0d5dc;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.mobile-filters-panel .btn-theme-mobile:hover {
+  border-color: #4a7fd6;
+  color: #4a7fd6;
+  background: #f7f8fa;
 }
 
 /* ============================================================================
@@ -260,6 +355,7 @@ body {
   background: #f7f8fa;
   border-radius: 6px;
   font-size: 12px;
+  gap: 6px;
 }
 .info-row .label {
   color: #777;
@@ -273,6 +369,9 @@ body {
   font-weight: 600;
   font-family: 'SF Mono', monospace;
   text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ============================================================================
@@ -342,7 +441,6 @@ body {
   letter-spacing: 0.5px;
 }
 .badge-source.manual { background: #e8f0fa; color: #2a5aa8; }
-.badge-source.yugipedia { background: #f0e8fa; color: #7a4aa8; }
 .badge-source.vaact { background: #fff0d4; color: #b07000; }
 
 /* Badge d'avertissement — carte incomplète */
@@ -409,90 +507,120 @@ body {
 .nav-center { font-size: 13px; color: #777; font-weight: 600; }
 
 /* ============================================================================
-   RESPONSIVE
+   RESPONSIVE — DESKTOP / MOBILE
    ============================================================================ */
 @media (max-width: 900px) {
   .topbar-center { max-width: none; }
 }
 
+/* ----- MOBILE : ≤ 800px ----- */
 @media (max-width: 800px) {
-  body { padding-bottom: 90px; }
+  body { padding-bottom: 84px; }
 
-  .main-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
+  /* Cache les éléments desktop uniquement */
+  .desktop-only { display: none !important; }
 
-  .card-visual {
-    position: static;
-    max-width: 100%;
-    margin: 0;
-    padding: 12px;
-    display: flex;
-    gap: 14px;
-    align-items: flex-start;
-  }
+  /* Cache le texte du bouton 🎲 et le texte du logo */
+  .btn-random-label { display: none; }
+  .logo-text { display: none; }
 
-  .card-image {
-    width: 140px;
-    height: 140px;
-    flex-shrink: 0;
-    margin-bottom: 0;
-    aspect-ratio: 1 / 1;
-    font-size: 32px;
-  }
-
-  .card-info { flex: 1; min-width: 0; gap: 5px; }
-  .info-row { padding: 5px 9px; font-size: 11px; }
-  .info-row .label { font-size: 9px; }
-  .info-row .value { font-size: 11px; }
-
-  .section,
-  .translation { padding: 14px; }
-
-  .section-title { margin-bottom: 10px; }
-  .trans-name,
-  .original-name { font-size: 15px; }
-  .trans-desc { font-size: 13px; }
-  .original-desc { font-size: 12px; }
-
+  /* Topbar compacte, sur une seule ligne */
   .topbar { padding: 10px 0; }
   .topbar-inner {
     padding: 0 12px;
-    flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
+    flex-wrap: nowrap;
   }
-  .logo { font-size: 16px; }
-  .logo-icon { width: 28px; height: 28px; font-size: 14px; }
+  .logo { font-size: 15px; }
+  .logo-icon { width: 30px; height: 30px; font-size: 14px; }
+
   .topbar-center {
     max-width: none;
-    width: 100%;
-    order: 3;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    gap: 6px;
+    justify-content: flex-end;
   }
 
-  .filter-vaact { padding: 9px 10px; font-size: 12px; }
-  .filter-vaact span { display: inline; }
+  .search-input {
+    font-size: 13px;
+    padding: 8px 10px;
+    min-width: 0;
+  }
 
+  /* 🎲 compact : juste l'icône */
+  .btn-random {
+    padding: 0;
+    width: 38px;
+    height: 38px;
+    justify-content: center;
+    font-size: 16px;
+  }
+
+  /* ☰ visible en mobile */
+  .btn-mobile-filters {
+    display: inline-flex;
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
+  }
+
+  /* Layout principal : 1 colonne */
+  .main-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* Carte visuelle : image centrée + infos en grille 2 cols */
+  .card-visual {
+    position: static;
+    padding: 12px;
+    display: block;
+  }
+  .card-image {
+    width: 140px;
+    height: 140px;
+    margin: 0 auto 12px;
+    font-size: 36px;
+  }
+  .card-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+  }
+  .info-row { padding: 6px 9px; font-size: 11px; }
+  .info-row .label { font-size: 9px; }
+  .info-row .value { font-size: 11px; }
+
+  /* Sections compactées */
+  .section,
+  .translation { padding: 14px; border-radius: 10px; }
+
+  .section-title { margin-bottom: 10px; font-size: 10px; }
+  .trans-name,
+  .original-name { font-size: 15px; }
+  .trans-desc,
+  .original-desc { font-size: 13px; line-height: 1.55; }
+
+  /* Container plus compact */
   .container { padding: 0 12px; margin: 16px auto; }
 
+  /* Nav-bar compacte */
   .nav-bar { padding: 10px 12px; }
   .nav-btn { padding: 9px 14px; font-size: 12px; }
   .nav-center { font-size: 12px; }
 }
 
+/* ----- TRÈS PETIT ÉCRAN : ≤ 480px ----- */
 @media (max-width: 480px) {
-  .card-image { width: 110px; height: 110px; font-size: 28px; }
-  .info-row { padding: 4px 7px; font-size: 10px; }
+  .card-image { width: 120px; height: 120px; font-size: 30px; }
+  .info-row { padding: 5px 7px; font-size: 10px; }
   .info-row .label { font-size: 8px; }
   .info-row .value { font-size: 10px; }
+
   .trans-name, .original-name { font-size: 14px; }
   .trans-desc, .original-desc { font-size: 12px; }
-  .nav-btn { padding: 8px 10px; font-size: 11px; }
-  .btn-random { padding: 9px 12px; font-size: 12px; }
 
-  /* Sur très petits écrans, on masque le texte des filtres */
-  .filter-vaact span { display: none; }
+  .nav-btn { padding: 8px 10px; font-size: 11px; }
 }
 
 /* ============================================================================
@@ -536,6 +664,32 @@ body {
   border-color: #5a8fe6;
 }
 
+/* Bouton ☰ et panneau mobile en mode sombre */
+[data-theme="dark"] .btn-mobile-filters {
+  background: #252530;
+  border-color: #2e2e3c;
+  color: #aaa;
+}
+[data-theme="dark"] .btn-mobile-filters:hover {
+  border-color: #5a8fe6;
+  color: #5a8fe6;
+}
+[data-theme="dark"] .mobile-filters-panel {
+  background: #1e1e28;
+  border-color: #2e2e3c;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+[data-theme="dark"] .mobile-filters-panel .btn-theme-mobile {
+  background: #252530;
+  border-color: #2e2e3c;
+  color: #aaa;
+}
+[data-theme="dark"] .mobile-filters-panel .btn-theme-mobile:hover {
+  border-color: #5a8fe6;
+  color: #5a8fe6;
+  background: #2a2a38;
+}
+
 [data-theme="dark"] .filter-vaact {
   background: #252530;
   border-color: #2e2e3c;
@@ -557,11 +711,13 @@ body {
   background: #5a8fe6;
   border-color: #5a8fe6;
 }
-[data-theme="dark"] .filter-vaact input#incompleteFilter:checked {
+[data-theme="dark"] .filter-vaact input#incompleteFilter:checked,
+[data-theme="dark"] .filter-vaact input#incompleteFilterMobile:checked {
   background: #e05a4a;
   border-color: #e05a4a;
 }
-[data-theme="dark"] .filter-vaact input#incompleteFilter:checked + span {
+[data-theme="dark"] .filter-vaact input#incompleteFilter:checked + span,
+[data-theme="dark"] .filter-vaact input#incompleteFilterMobile:checked + span {
   color: #e07a6a;
 }
 
