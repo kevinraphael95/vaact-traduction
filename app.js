@@ -9,7 +9,26 @@ const CDB_FR_URL = 'data/VAACT_S1_fr.cdb';
 // ============================================================================
 let CARDS = [];
 let currentIndex = 0;
-let searchQuery = '';   // recherche active (lowercase, trimmed)
+let searchQuery = '';              // recherche topbar (lowercase, trimmed)
+let customKeywords = [];           // filtres personnalisés (lowercase)
+const CUSTOM_KEYWORDS_LS = 'vaact-custom-keywords';
+
+// Restaure les mots-clés sauvegardés
+(function restoreCustomKeywords() {
+  try {
+    const saved = localStorage.getItem(CUSTOM_KEYWORDS_LS);
+    if (saved) customKeywords = JSON.parse(saved);
+    if (!Array.isArray(customKeywords)) customKeywords = [];
+  } catch (e) {
+    customKeywords = [];
+  }
+})();
+
+function saveCustomKeywords() {
+  try {
+    localStorage.setItem(CUSTOM_KEYWORDS_LS, JSON.stringify(customKeywords));
+  } catch (e) {}
+}
 
 // ============================================================================
 // TRADUCTION DES CODES YGOPRO
@@ -83,18 +102,19 @@ function getFilterState() {
     vaact: !!document.getElementById('filterVaact')?.checked,
     incomplete: !!document.getElementById('filterIncomplete')?.checked,
     search: searchQuery,
+    keywords: customKeywords,
   };
 }
 
 /** Compte combien de filtres sont actifs (pour le badge). */
 function countActiveFilters() {
-  const { vaact, incomplete, search } = getFilterState();
-  return (vaact ? 1 : 0) + (incomplete ? 1 : 0) + (search ? 1 : 0);
+  const { vaact, incomplete, search, keywords } = getFilterState();
+  return (vaact ? 1 : 0) + (incomplete ? 1 : 0) + (search ? 1 : 0) + keywords.length;
 }
 
 function getFilteredCards() {
   let list = CARDS;
-  const { vaact, incomplete, search } = getFilterState();
+  const { vaact, incomplete, search, keywords } = getFilterState();
 
   if (vaact) list = list.filter(isVaactCard);
   if (incomplete) list = list.filter(isIncompleteCard);
@@ -105,6 +125,18 @@ function getFilteredCards() {
       (c.name_fr || '').toLowerCase().includes(search) ||
       (c.id || '').includes(search)
     );
+  }
+
+  if (keywords.length) {
+    // ET logique : la carte doit contenir TOUS les mots-clés
+    list = list.filter(c => {
+      const haystack = [
+        (c.name_en || '').toLowerCase(),
+        (c.name_fr || '').toLowerCase(),
+        (c.id || ''),
+      ].join(' ');
+      return keywords.every(kw => haystack.includes(kw));
+    });
   }
 
   return list;
@@ -252,6 +284,8 @@ async function loadCards() {
     document.getElementById('mainContainer').style.display = 'block';
     document.getElementById('navBar').style.display = 'block';
 
+    renderCustomChips();
+    updateFiltersBadge();
     render();
 
   } catch (err) {
@@ -535,6 +569,103 @@ if (filtersBtn && filtersPanel) {
     updateFiltersBadge();
   });
 });
+
+// ============================================================================
+// FILTRES PERSONNALISÉS — mots-clés cumulables
+// ============================================================================
+const customInput = document.getElementById('customKeywordInput');
+const customAddBtn = document.getElementById('customAddBtn');
+const customChips = document.getElementById('customChips');
+const customResetBtn = document.getElementById('filterResetBtn');
+
+/** Ajoute un mot-clé (évite les doublons et les vides). */
+function addCustomKeyword(rawValue) {
+  const value = (rawValue || '').trim().toLowerCase();
+  if (!value) return;
+  if (customKeywords.includes(value)) return;
+
+  customKeywords.push(value);
+  saveCustomKeywords();
+  renderCustomChips();
+  currentIndex = 0;
+  render();
+  updateFiltersBadge();
+}
+
+/** Retire un mot-clé par sa valeur. */
+function removeCustomKeyword(value) {
+  const idx = customKeywords.indexOf(value);
+  if (idx === -1) return;
+  customKeywords.splice(idx, 1);
+  saveCustomKeywords();
+  renderCustomChips();
+  currentIndex = 0;
+  render();
+  updateFiltersBadge();
+}
+
+/** (Re)dessine les chips. */
+function renderCustomChips() {
+  if (!customChips) return;
+
+  if (!customKeywords.length) {
+    customChips.innerHTML = '';
+    return;
+  }
+
+  customChips.innerHTML = customKeywords.map(kw => `
+    <span class="custom-chip">
+      <span class="chip-label">${esc(kw)}</span>
+      <button type="button" class="chip-remove" data-keyword="${esc(kw)}" title="Retirer" aria-label="Retirer ${esc(kw)}">✕</button>
+    </span>
+  `).join('');
+
+  // Branche le ✕ de chaque chip
+  customChips.querySelectorAll('.chip-remove').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      removeCustomKeyword(btn.dataset.keyword);
+    });
+  });
+}
+
+if (customAddBtn && customInput) {
+  customAddBtn.addEventListener('click', () => {
+    addCustomKeyword(customInput.value);
+    customInput.value = '';
+    customInput.focus();
+  });
+
+  customInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addCustomKeyword(customInput.value);
+      customInput.value = '';
+    }
+  });
+}
+
+if (customResetBtn) {
+  customResetBtn.addEventListener('click', () => {
+    // Reset tous les filtres : VAACT, Incomplètes, recherche, mots-clés
+    const v = document.getElementById('filterVaact');
+    const i = document.getElementById('filterIncomplete');
+    if (v) v.checked = false;
+    if (i) i.checked = false;
+
+    searchQuery = '';
+    if (searchInput) searchInput.value = '';
+    updateSearchIndicator();
+
+    customKeywords = [];
+    saveCustomKeywords();
+    renderCustomChips();
+
+    currentIndex = 0;
+    render();
+    updateFiltersBadge();
+  });
+}
 
 // ============================================================================
 // RECHERCHE — dans la topbar (toujours visible)
