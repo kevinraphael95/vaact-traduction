@@ -164,6 +164,25 @@ async function loadCardImage(card) {
 // ============================================================================
 // CHARGEMENT
 // ============================================================================
+async function fetchBuffer(url, label) {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`${label} introuvable (HTTP ${res.status}) — URL testée : ${url}`);
+  }
+  const buf = await res.arrayBuffer();
+
+  // Vérification de l'en-tête SQLite
+  const header = new TextDecoder().decode(buf.slice(0, 16));
+  if (!header.startsWith('SQLite format 3')) {
+    throw new Error(
+      `${label} n'est pas un fichier SQLite valide — ` +
+      `l'URL renvoie probablement une page HTML 404. ` +
+      `Vérifie que le fichier existe bien à : ${url}`
+    );
+  }
+  return buf;
+}
+
 async function loadCards() {
   const loadingText = document.getElementById('loadingText');
 
@@ -174,11 +193,11 @@ async function loadCards() {
     });
 
     loadingText.textContent = 'Chargement du cdb original (EN)…';
-    const enBuffer = await fetch(CDB_EN_URL).then(r => r.arrayBuffer());
+    const enBuffer = await fetchBuffer(CDB_EN_URL, 'Fichier EN');
     const enDb = new SQL.Database(new Uint8Array(enBuffer));
 
     loadingText.textContent = 'Chargement du cdb traduit (FR)…';
-    const frBuffer = await fetch(CDB_FR_URL).then(r => r.arrayBuffer());
+    const frBuffer = await fetchBuffer(CDB_FR_URL, 'Fichier FR');
     const frDb = new SQL.Database(new Uint8Array(frBuffer));
 
     loadingText.textContent = 'Extraction des cartes…';
@@ -203,7 +222,7 @@ async function loadCards() {
   } catch (err) {
     console.error('❌ Erreur:', err);
     loadingText.innerHTML = `❌ Erreur : ${err.message}<br><br>
-      <small>Vérifie que les fichiers .cdb sont bien dans <code>data/</code></small>`;
+      <small>Vérifie que les fichiers .cdb sont bien dans <code>data/</code> et accessibles.</small>`;
   }
 }
 
@@ -276,8 +295,6 @@ function mergeCards(enCards, frCards) {
         def: en.def ?? null,
         level: en.level ?? null,
         attribute: en.attribute || '',
-        up: 0,
-        down: 0,
         missingFr: true,
       });
       continue;
@@ -294,8 +311,6 @@ function mergeCards(enCards, frCards) {
       def: en.def ?? null,
       level: en.level ?? null,
       attribute: en.attribute || '',
-      up: 0,
-      down: 0,
     });
   }
 
@@ -315,8 +330,6 @@ function mergeCards(enCards, frCards) {
       def: fr.def ?? null,
       level: fr.level ?? null,
       attribute: fr.attribute || '',
-      up: 0,
-      down: 0,
       missingEn: true,
     });
   }
@@ -385,11 +398,6 @@ function render() {
 
 function renderTranslation(card) {
   const container = document.getElementById('translationSection');
-  const vote = getVotes()[card.id] || null;
-  const upClass = vote === 'up' ? 'voted-up' : '';
-  const downClass = vote === 'down' ? 'voted-down' : '';
-  const up = card.up || 0;
-  const down = card.down || 0;
   const isVaact = isVaactCard(card);
 
   // Badges d'avertissement pour cartes incomplètes
@@ -416,59 +424,11 @@ function renderTranslation(card) {
           ${isVaact ? `<span class="badge-source vaact">VAACT</span>` : ''}
           ${missingBadge}
         </div>
-        <div class="trans-votes">
-          <button class="vote-btn ${upClass}" data-vote="up">▲ ${up}</button>
-          <button class="vote-btn ${downClass}" data-vote="down">▼ ${down}</button>
-        </div>
       </div>
       <div class="trans-name">${frName}</div>
       <div class="trans-desc">${frDesc}</div>
     </div>
   `;
-
-  container.querySelectorAll('.vote-btn').forEach(btn =>
-    btn.addEventListener('click', () => handleVote(btn))
-  );
-}
-
-// ============================================================================
-// VOTES (localStorage)
-// ============================================================================
-const VOTES_KEY = 'vaact-votes';
-
-function getVotes() {
-  try { return JSON.parse(localStorage.getItem(VOTES_KEY) || '{}'); }
-  catch { return {}; }
-}
-function setVote(id, v) {
-  const x = getVotes(); x[id] = v;
-  localStorage.setItem(VOTES_KEY, JSON.stringify(x));
-}
-function removeVote(id) {
-  const x = getVotes(); delete x[id];
-  localStorage.setItem(VOTES_KEY, JSON.stringify(x));
-}
-function handleVote(btn) {
-  const filtered = getFilteredCards();
-  const card = filtered[currentIndex];
-  if (!card) return;
-  const id = card.id;
-  const vote = btn.dataset.vote;
-  const votes = getVotes();
-
-  if (votes[id] === vote) {
-    removeVote(id);
-    vote === 'up' ? card.up-- : card.down--;
-  } else if (votes[id]) {
-    const old = votes[id];
-    old === 'up' ? card.up-- : card.down--;
-    vote === 'up' ? card.up++ : card.down++;
-    setVote(id, vote);
-  } else {
-    vote === 'up' ? card.up++ : card.down++;
-    setVote(id, vote);
-  }
-  render();
 }
 
 // ============================================================================
