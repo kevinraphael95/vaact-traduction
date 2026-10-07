@@ -65,10 +65,11 @@
 </div>
 
 <!-- ========================================================================
-     PANNEAU FILTRES (VAACT + Incomplètes uniquement)
+     PANNEAU FILTRES
      ======================================================================== -->
 <div class="filters-panel" id="filtersPanel">
 
+  <!-- Filtres standards -->
   <div class="filters-panel-title">Filtres</div>
 
   <label class="filter-option">
@@ -80,6 +81,25 @@
     <input type="checkbox" id="filterIncomplete">
     <span class="label-text">⚠️ Incomplètes uniquement</span>
   </label>
+
+  <div class="filters-sep"></div>
+
+  <!-- Filtres personnalisés -->
+  <div class="filters-panel-title">Filtres personnalisés</div>
+
+  <!-- Chips des mots-clés actifs -->
+  <div class="custom-chips" id="customChips"></div>
+
+  <!-- Champ + bouton pour ajouter un mot-clé -->
+  <div class="custom-add-row">
+    <input type="text" id="customKeywordInput" placeholder="Ajouter un mot-clé…">
+    <button type="button" class="btn-add" id="customAddBtn" title="Ajouter" aria-label="Ajouter">＋</button>
+  </div>
+
+  <div class="custom-hint">La carte doit contenir <strong>tous</strong> les mots-clés.</div>
+
+  <!-- Reset global -->
+  <button type="button" class="btn-reset" id="filterResetBtn">Tout effacer</button>
 
 </div>
 
