@@ -255,7 +255,6 @@ function mergeCards(enCards, frCards) {
       image: '',
       up: 0,
       down: 0,
-      comments: [],
     });
   }
 
@@ -296,7 +295,6 @@ function render() {
 
 function renderTranslation(card) {
   const container = document.getElementById('translationSection');
-  const comments = card.comments || [];
   const vote = getVotes()[card.id] || null;
   const upClass = vote === 'up' ? 'voted-up' : '';
   const downClass = vote === 'down' ? 'voted-down' : '';
@@ -318,78 +316,18 @@ function renderTranslation(card) {
       </div>
       <div class="trans-name">${esc(card.name_fr || '—')}</div>
       <div class="trans-desc">${esc(card.desc_fr || '—')}</div>
-
-      <div class="comments-footer">
-        <button class="comments-toggle" id="commentsToggle">
-          <span class="arrow">▶</span>
-          💬 ${comments.length} commentaire${comments.length > 1 ? 's' : ''}
-        </button>
-        <button class="comments-toggle" id="addCommentBtn">＋ Commenter</button>
-      </div>
-
-      <div class="comments-section" id="commentsSection">
-        ${comments.length === 0
-          ? `<div class="no-comments">Aucun commentaire pour le moment</div>`
-          : [...comments].sort((a, b) => (b.up - b.down) - (a.up - a.down)).map(c => {
-              const cv = getCommentVotes()[c.id];
-              const cupClass = cv === 'up' ? 'voted-up' : '';
-              const cdownClass = cv === 'down' ? 'voted-down' : '';
-              return `
-                <div class="comment">
-                  <div class="comment-votes">
-                    <button class="comment-vote-btn ${cupClass}" data-comment-id="${c.id}" data-vote="up">▲</button>
-                    <span class="comment-score">${c.up - c.down}</span>
-                    <button class="comment-vote-btn ${cdownClass}" data-comment-id="${c.id}" data-vote="down">▼</button>
-                  </div>
-                  <div class="comment-body">
-                    <div class="comment-author">${esc(c.author)}</div>
-                    <div class="comment-text">${esc(c.text)}</div>
-                  </div>
-                </div>
-              `;
-            }).join('')}
-
-        <div class="comment-form" id="commentForm" style="display:none;">
-          <input type="text" placeholder="Ton pseudo (optionnel)" id="commentAuthor">
-          <textarea placeholder="Ta remarque / correction…" id="commentText"></textarea>
-          <div class="comment-form-actions">
-            <button class="btn-primary" id="commentSubmit">Publier</button>
-            <button class="btn-secondary" id="commentCancel">Annuler</button>
-          </div>
-        </div>
-      </div>
     </div>
   `;
 
   container.querySelectorAll('.vote-btn').forEach(btn =>
     btn.addEventListener('click', () => handleVote(btn))
   );
-  container.querySelectorAll('.comment-vote-btn').forEach(btn =>
-    btn.addEventListener('click', () => handleCommentVote(btn))
-  );
-  document.getElementById('commentsToggle').addEventListener('click', () => {
-    document.getElementById('commentsSection').classList.toggle('open');
-    document.getElementById('commentsToggle').classList.toggle('open');
-  });
-  document.getElementById('addCommentBtn').addEventListener('click', () => {
-    document.getElementById('commentsSection').classList.add('open');
-    document.getElementById('commentsToggle').classList.add('open');
-    document.getElementById('commentForm').style.display = 'block';
-    document.getElementById('commentAuthor').value = getUser();
-    document.getElementById('commentText').focus();
-  });
-  document.getElementById('commentCancel').addEventListener('click', () => {
-    document.getElementById('commentForm').style.display = 'none';
-  });
-  document.getElementById('commentSubmit').addEventListener('click', handleCommentSubmit);
 }
 
 // ============================================================================
 // VOTES (localStorage)
 // ============================================================================
 const VOTES_KEY = 'vaact-votes';
-const COMMENT_VOTES_KEY = 'vaact-comment-votes';
-const USER_KEY = 'vaact-user';
 
 function getVotes() {
   try { return JSON.parse(localStorage.getItem(VOTES_KEY) || '{}'); }
@@ -424,73 +362,6 @@ function handleVote(btn) {
     setVote(id, vote);
   }
   render();
-}
-
-function getCommentVotes() {
-  try { return JSON.parse(localStorage.getItem(COMMENT_VOTES_KEY) || '{}'); }
-  catch { return {}; }
-}
-function setCommentVote(id, v) {
-  const x = getCommentVotes(); x[id] = v;
-  localStorage.setItem(COMMENT_VOTES_KEY, JSON.stringify(x));
-}
-function removeCommentVote(id) {
-  const x = getCommentVotes(); delete x[id];
-  localStorage.setItem(COMMENT_VOTES_KEY, JSON.stringify(x));
-}
-function handleCommentVote(btn) {
-  const id = parseInt(btn.dataset.commentId);
-  const vote = btn.dataset.vote;
-  const votes = getCommentVotes();
-  const filtered = getFilteredCards();
-  const card = filtered[currentIndex];
-  if (!card || !card.comments) return;
-  const comment = card.comments.find(c => c.id === id);
-  if (!comment) return;
-
-  if (votes[id] === vote) {
-    removeCommentVote(id);
-    vote === 'up' ? comment.up-- : comment.down--;
-  } else if (votes[id]) {
-    const old = votes[id];
-    old === 'up' ? comment.up-- : comment.down--;
-    vote === 'up' ? comment.up++ : comment.down++;
-    setCommentVote(id, vote);
-  } else {
-    vote === 'up' ? comment.up++ : comment.down++;
-    setCommentVote(id, vote);
-  }
-  render();
-  setTimeout(() => {
-    document.getElementById('commentsSection')?.classList.add('open');
-    document.getElementById('commentsToggle')?.classList.add('open');
-  }, 0);
-}
-
-// ============================================================================
-// COMMENTAIRES
-// ============================================================================
-function getUser() { return localStorage.getItem(USER_KEY) || ''; }
-function setUser(n) { if (n) localStorage.setItem(USER_KEY, n); }
-
-function handleCommentSubmit() {
-  const author = document.getElementById('commentAuthor').value.trim() || getUser() || 'Anonyme';
-  const text = document.getElementById('commentText').value.trim();
-  if (!text) return;
-  if (document.getElementById('commentAuthor').value.trim()) {
-    setUser(document.getElementById('commentAuthor').value.trim());
-  }
-
-  const filtered = getFilteredCards();
-  const card = filtered[currentIndex];
-  if (!card) return;
-  if (!card.comments) card.comments = [];
-  card.comments.push({ id: Date.now(), author, text, up: 0, down: 0 });
-  render();
-  setTimeout(() => {
-    document.getElementById('commentsSection')?.classList.add('open');
-    document.getElementById('commentsToggle')?.classList.add('open');
-  }, 0);
 }
 
 // ============================================================================
