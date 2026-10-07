@@ -5,6 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VAACT Trad Vérif</title>
 <link rel="stylesheet" href="style.css">
+<script>
+  // Application du thème avant le rendu pour éviter le flash clair
+  (function() {
+    try {
+      const saved = localStorage.getItem('vaact-theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = saved || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    } catch (e) {}
+  })();
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
 </head>
 <body>
@@ -24,27 +35,60 @@
      ======================================================================== -->
 <div class="topbar">
   <div class="topbar-inner">
+
+    <!-- Logo : texte visible en desktop, masqué en mobile -->
     <div class="logo">
       <div class="logo-icon">⚔️</div>
-      VAACT - Vérificateur de Traduction
+      <span class="logo-text">VAACT - Vérificateur de Traduction</span>
     </div>
+
     <div class="topbar-center">
+      <!-- Recherche : toujours visible -->
       <input type="text" class="search-input" id="searchInput" placeholder="Chercher une carte…">
 
-      <label class="filter-vaact" title="Afficher seulement les cartes VAACT (effet modifié)">
+      <!-- Filtres : desktop uniquement -->
+      <label class="filter-vaact desktop-only" title="Afficher seulement les cartes VAACT (effet modifié)">
         <input type="checkbox" id="vaactFilter">
         <span>VAACT</span>
       </label>
 
-      <label class="filter-vaact" title="Afficher seulement les cartes sans correspondance EN/FR">
+      <label class="filter-vaact desktop-only" title="Afficher seulement les cartes sans correspondance EN/FR">
         <input type="checkbox" id="incompleteFilter">
         <span>⚠️ Incomplètes</span>
       </label>
 
-      <button class="btn-random" id="randomBtn">🎲 Aléatoire</button>
-      <button class="btn-theme" id="themeToggle" title="Changer de thème">🌙</button>
+      <!-- Aléatoire : toujours visible (label texte masqué en mobile via CSS) -->
+      <button class="btn-random" id="randomBtn" title="Carte aléatoire">
+        🎲 <span class="btn-random-label">Aléatoire</span>
+      </button>
+
+      <!-- Thème : desktop uniquement -->
+      <button class="btn-theme desktop-only" id="themeToggle" title="Changer de thème">🌙</button>
+
+      <!-- Bouton filtres : mobile uniquement -->
+      <button class="btn-mobile-filters" id="mobileFiltersBtn" title="Filtres" aria-label="Ouvrir les filtres">☰</button>
     </div>
+
   </div>
+</div>
+
+<!-- ========================================================================
+     PANNEAU FILTRES MOBILE (caché par défaut)
+     ======================================================================== -->
+<div class="mobile-filters-panel" id="mobileFiltersPanel">
+
+  <label class="filter-vaact" title="Afficher seulement les cartes VAACT">
+    <input type="checkbox" id="vaactFilterMobile">
+    <span>VAACT</span>
+  </label>
+
+  <label class="filter-vaact" title="Afficher seulement les cartes incomplètes">
+    <input type="checkbox" id="incompleteFilterMobile">
+    <span>⚠️ Incomplètes</span>
+  </label>
+
+  <button class="btn-theme-mobile" id="themeToggleMobile">🌙 Thème sombre</button>
+
 </div>
 
 <!-- ========================================================================
