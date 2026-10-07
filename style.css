@@ -236,7 +236,9 @@ body {
   padding: 14px;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
   z-index: 50;
-  width: 300px;
+  width: 340px;
+  max-height: calc(100vh - 90px);
+  overflow-y: auto;
   flex-direction: column;
   gap: 8px;
 }
@@ -310,6 +312,122 @@ body {
   font-weight: 700;
 }
 .filter-option .label-text { flex: 1; }
+
+/* ============================================================================
+   FILTRES PERSONNALISÉS (chips + ajout + reset)
+   ============================================================================ */
+.filters-sep {
+  height: 1px;
+  background: #eef0f4;
+  margin: 4px 0;
+}
+
+/* Chips des mots-clés actifs */
+.custom-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.custom-chips:empty { display: none; }
+
+.custom-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px 5px 10px;
+  background: #e8f0fa;
+  color: #2a5aa8;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+.custom-chip .chip-label {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.custom-chip .chip-remove {
+  width: 16px;
+  height: 16px;
+  background: rgba(42, 90, 168, 0.2);
+  color: #2a5aa8;
+  border: none;
+  border-radius: 50%;
+  font-size: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  padding: 0;
+  line-height: 1;
+  transition: background 0.15s;
+}
+.custom-chip .chip-remove:hover { background: rgba(42, 90, 168, 0.35); }
+
+/* Ligne d'ajout d'un mot-clé */
+.custom-add-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.custom-add-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1px solid #d0d5dc;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  background: #f7f8fa;
+}
+.custom-add-row input:focus {
+  outline: none;
+  border-color: #4a7fd6;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(74, 127, 214, 0.15);
+}
+.btn-add {
+  padding: 9px 12px;
+  background: #4a7fd6;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.btn-add:hover { background: #3a6fc6; }
+
+.custom-hint {
+  font-size: 10px;
+  color: #999;
+  font-style: italic;
+}
+.custom-hint strong { color: #666; font-style: normal; }
+
+/* Bouton reset global */
+.btn-reset {
+  padding: 9px 12px;
+  background: #fff;
+  border: 1px solid #d0d5dc;
+  border-radius: 8px;
+  color: #888;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  width: 100%;
+  margin-top: 2px;
+  transition: all 0.15s;
+}
+.btn-reset:hover { border-color: #c0392b; color: #c0392b; }
 
 /* ============================================================================
    LAYOUT
@@ -505,16 +623,24 @@ body {
 .nav-center { font-size: 13px; color: #777; font-weight: 600; }
 
 /* ============================================================================
-   RESPONSIVE
+   RESPONSIVE — 900px : bascule label → icône
    ============================================================================ */
 @media (max-width: 900px) {
+  /* Le label texte disparaît, remplacé par ≡ via ::before */
   .btn-filters-label { display: none; }
+  .btn-filters::before {
+    content: '≡';
+    font-size: 18px;
+    line-height: 1;
+  }
 }
 
+/* ============================================================================
+   RESPONSIVE — 800px : topbar compacte, layout mobile
+   ============================================================================ */
 @media (max-width: 800px) {
   body { padding-bottom: 84px; }
 
-  /* Cache les labels texte pour gagner de la place */
   .btn-random-label,
   .logo-text { display: none; }
 
@@ -526,7 +652,6 @@ body {
   .logo { font-size: 15px; }
   .logo-icon { width: 30px; height: 30px; font-size: 14px; }
 
-  /* Barre de recherche : flexible, prend la place restante */
   .search-wrap {
     flex: 1;
     min-width: 0;
@@ -543,17 +668,12 @@ body {
     right: 5px;
   }
 
-  /* Bouton Filtres : icône seule (≡) avec badge en pastille */
   .btn-filters {
     width: 38px;
     height: 38px;
     padding: 0;
     font-size: 18px;
-  }
-  .btn-filters-label { display: none; }
-  .btn-filters::before {
-    content: '≡';
-    line-height: 1;
+    gap: 0;
   }
   .btn-filters .badge-count {
     position: absolute;
@@ -580,6 +700,7 @@ body {
     right: 10px;
     left: 10px;
     width: auto;
+    max-height: calc(100vh - 80px);
   }
 
   /* Layout principal : 1 colonne */
@@ -721,6 +842,47 @@ body {
   border-color: #e05a4a;
 }
 [data-theme="dark"] .filter-option input#filterIncomplete:checked + .label-text {
+  color: #e07a6a;
+}
+
+/* Filtres personnalisés en dark */
+[data-theme="dark"] .filters-sep { background: #2a2a38; }
+
+[data-theme="dark"] .custom-chip {
+  background: rgba(90, 143, 230, 0.18);
+  color: #7aa8e8;
+}
+[data-theme="dark"] .custom-chip .chip-remove {
+  background: rgba(122, 168, 232, 0.25);
+  color: #7aa8e8;
+}
+[data-theme="dark"] .custom-chip .chip-remove:hover {
+  background: rgba(122, 168, 232, 0.4);
+}
+
+[data-theme="dark"] .custom-add-row input {
+  background: #252530;
+  border-color: #2e2e3c;
+  color: #e4e4ea;
+}
+[data-theme="dark"] .custom-add-row input::placeholder { color: #5a5a70; }
+[data-theme="dark"] .custom-add-row input:focus {
+  background: #1e1e28;
+  border-color: #5a8fe6;
+}
+[data-theme="dark"] .btn-add { background: #5a8fe6; }
+[data-theme="dark"] .btn-add:hover { background: #4a7fd6; }
+
+[data-theme="dark"] .custom-hint { color: #5a5a70; }
+[data-theme="dark"] .custom-hint strong { color: #8888a0; }
+
+[data-theme="dark"] .btn-reset {
+  background: #252530;
+  border-color: #2e2e3c;
+  color: #8888a0;
+}
+[data-theme="dark"] .btn-reset:hover {
+  border-color: #e05a4a;
   color: #e07a6a;
 }
 
