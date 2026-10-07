@@ -66,18 +66,30 @@ function formatStat(value) {
 }
 
 // ============================================================================
-// FILTRE VAACT
+// FILTRES
 // ============================================================================
 function isVaactCard(card) {
   return (card.desc_fr || '').trim().startsWith('(VAACT');
 }
 
+function isIncompleteCard(card) {
+  return card.missingFr === true || card.missingEn === true;
+}
+
 function getFilteredCards() {
-  const checkbox = document.getElementById('vaactFilter');
-  if (checkbox && checkbox.checked) {
-    return CARDS.filter(isVaactCard);
+  let list = CARDS;
+
+  const vaactCheckbox = document.getElementById('vaactFilter');
+  if (vaactCheckbox && vaactCheckbox.checked) {
+    list = list.filter(isVaactCard);
   }
-  return CARDS;
+
+  const incompleteCheckbox = document.getElementById('incompleteFilter');
+  if (incompleteCheckbox && incompleteCheckbox.checked) {
+    list = list.filter(isIncompleteCard);
+  }
+
+  return list;
 }
 
 // ============================================================================
@@ -86,6 +98,7 @@ function getFilteredCards() {
 const imageCache = {};
 
 async function fetchCardImage(cardName) {
+  if (!cardName) return null;
   if (imageCache[cardName] !== undefined) return imageCache[cardName];
 
   const lsKey = 'img_' + cardName;
@@ -138,7 +151,8 @@ async function loadCardImage(card) {
     parent.appendChild(ph);
   }
 
-  const imgUrl = await fetchCardImage(card.name_en);
+  // On essaie le nom EN d'abord, puis le nom FR en fallback
+  const imgUrl = await fetchCardImage(card.name_en) || await fetchCardImage(card.name_fr);
   if (getFilteredCards()[currentIndex] !== card) return;
   if (!imgUrl) return;
 
@@ -173,7 +187,12 @@ async function loadCards() {
 
     loadingText.textContent = 'Fusion des traductions…';
     CARDS = mergeCards(enCards, frCards);
+
+    const missingFr = CARDS.filter(c => c.missingFr).length;
+    const missingEn = CARDS.filter(c => c.missingEn).length;
     console.log(`✅ ${CARDS.length} cartes chargées`);
+    console.log(`   • ${missingFr} sans traduction FR`);
+    console.log(`   • ${missingEn} sans original EN`);
 
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('mainContainer').style.display = 'block';
@@ -232,14 +251,37 @@ function extractCards(db) {
 }
 
 // ============================================================================
-// FUSION
+// FUSION — avec détection des cartes orphelines
 // ============================================================================
 function mergeCards(enCards, frCards) {
   const result = [];
+  const enOnly = [];
+  const frOnly = [];
+
+  // 1) Toutes les cartes présentes en EN (avec ou sans FR)
   for (const id in enCards) {
     const en = enCards[id];
     const fr = frCards[id];
-    if (!fr) continue;
+
+    if (!fr) {
+      enOnly.push({ id, name: en.name });
+      result.push({
+        id: en.id,
+        name_en: en.name,
+        desc_en: en.desc,
+        name_fr: '',
+        desc_fr: '',
+        type: en.type || '',
+        atk: en.atk ?? null,
+        def: en.def ?? null,
+        level: en.level ?? null,
+        attribute: en.attribute || '',
+        up: 0,
+        down: 0,
+        missingFr: true,
+      });
+      continue;
+    }
 
     result.push({
       id: en.id,
@@ -252,10 +294,44 @@ function mergeCards(enCards, frCards) {
       def: en.def ?? null,
       level: en.level ?? null,
       attribute: en.attribute || '',
-      image: '',
       up: 0,
       down: 0,
     });
+  }
+
+  // 2) Cartes présentes uniquement en FR
+  for (const id in frCards) {
+    if (enCards[id]) continue;
+    const fr = frCards[id];
+    frOnly.push({ id, name: fr.name });
+    result.push({
+      id: fr.id,
+      name_en: '',
+      desc_en: '',
+      name_fr: fr.name,
+      desc_fr: fr.desc,
+      type: fr.type || '',
+      atk: fr.atk ?? null,
+      def: fr.def ?? null,
+      level: fr.level ?? null,
+      attribute: fr.attribute || '',
+      up: 0,
+      down: 0,
+      missingEn: true,
+    });
+  }
+
+  // Logs récapitulatifs
+  if (enOnly.length) {
+    console.warn(`⚠️ ${enOnly.length} carte(s) présente(s) en EN mais absente(s) en FR :`);
+    console.table(enOnly);
+  }
+  if (frOnly.length) {
+    console.warn(`⚠️ ${frOnly.length} carte(s) présente(s) en FR mais absente(s) en EN :`);
+    console.table(frOnly);
+  }
+  if (!enOnly.length && !frOnly.length) {
+    console.log('✅ Aucune carte orpheline — les deux fichiers sont synchronisés.');
   }
 
   result.sort((a, b) => parseInt(a.id) - parseInt(b.id));
@@ -268,7 +344,21 @@ function mergeCards(enCards, frCards) {
 function render() {
   if (!CARDS.length) return;
   const filtered = getFilteredCards();
-  if (!filtered.length) return;
+
+  if (!filtered.length) {
+    document.getElementById('infoId').textContent = '—';
+    document.getElementById('infoType').textContent = '—';
+    document.getElementById('infoAttr').textContent = '—';
+    document.getElementById('infoStats').textContent = '—';
+    document.getElementById('infoLevel').textContent = '—';
+    document.getElementById('origName').textContent = '—';
+    document.getElementById('origDesc').textContent = 'Aucune carte ne correspond aux filtres actifs.';
+    document.getElementById('translationSection').innerHTML = '';
+    document.getElementById('navCenter').textContent = '0 / 0';
+    document.getElementById('prevBtn').disabled = true;
+    document.getElementById('nextBtn').disabled = true;
+    return;
+  }
 
   if (currentIndex >= filtered.length) currentIndex = 0;
 
@@ -302,20 +392,37 @@ function renderTranslation(card) {
   const down = card.down || 0;
   const isVaact = isVaactCard(card);
 
+  // Badges d'avertissement pour cartes incomplètes
+  let missingBadge = '';
+  if (card.missingFr) {
+    missingBadge = `<span class="badge-source missing">⚠️ Traduction FR manquante</span>`;
+  } else if (card.missingEn) {
+    missingBadge = `<span class="badge-source missing">⚠️ Original EN manquant</span>`;
+  }
+
+  // Placeholder pour la zone manquante
+  const frName = card.missingFr
+    ? '<em style="opacity:.5;">— aucune traduction FR pour cette carte —</em>'
+    : esc(card.name_fr || '—');
+  const frDesc = card.missingFr
+    ? '<em style="opacity:.5;">Cette carte existe dans le fichier EN mais n\'a pas de correspondance dans le fichier FR.</em>'
+    : esc(card.desc_fr || '—');
+
   container.innerHTML = `
-    <div class="translation">
+    <div class="translation${card.missingFr || card.missingEn ? ' incomplete' : ''}">
       <div class="trans-head">
         <div class="trans-meta">
           <span class="badge-source manual">Traduction</span>
           ${isVaact ? `<span class="badge-source vaact">VAACT</span>` : ''}
+          ${missingBadge}
         </div>
         <div class="trans-votes">
           <button class="vote-btn ${upClass}" data-vote="up">▲ ${up}</button>
           <button class="vote-btn ${downClass}" data-vote="down">▼ ${down}</button>
         </div>
       </div>
-      <div class="trans-name">${esc(card.name_fr || '—')}</div>
-      <div class="trans-desc">${esc(card.desc_fr || '—')}</div>
+      <div class="trans-name">${frName}</div>
+      <div class="trans-desc">${frDesc}</div>
     </div>
   `;
 
@@ -376,6 +483,7 @@ document.getElementById('nextBtn').addEventListener('click', () => {
 });
 document.getElementById('randomBtn').addEventListener('click', () => {
   const filtered = getFilteredCards();
+  if (!filtered.length) return;
   currentIndex = Math.floor(Math.random() * filtered.length);
   render();
 });
@@ -403,12 +511,20 @@ document.getElementById('searchInput').addEventListener('keydown', (e) => {
 });
 
 // ============================================================================
-// FILTRE VAACT — event
+// FILTRES — events
 // ============================================================================
 document.getElementById('vaactFilter').addEventListener('change', () => {
   currentIndex = 0;
   render();
 });
+
+const incompleteFilterEl = document.getElementById('incompleteFilter');
+if (incompleteFilterEl) {
+  incompleteFilterEl.addEventListener('change', () => {
+    currentIndex = 0;
+    render();
+  });
+}
 
 // ============================================================================
 // UTIL
