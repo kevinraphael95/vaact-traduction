@@ -320,8 +320,7 @@ body {
    ============================================================================ */
 .trans-head {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
   margin-bottom: 14px;
 }
@@ -351,25 +350,6 @@ body {
   background: #fae0dd;
   color: #a82a1a;
 }
-
-.trans-votes { display: flex; gap: 6px; align-items: center; }
-.vote-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
-  border: 1px solid #d0d5dc;
-  background: #fff;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-  color: #777;
-}
-.vote-btn:hover { border-color: #4a7fd6; color: #4a7fd6; }
-.vote-btn.voted-up { background: #e8f0fa; border-color: #4a7fd6; color: #2a5aa8; }
-.vote-btn.voted-down { background: #fae8e8; border-color: #d64a4a; color: #a82a2a; }
 
 .trans-name { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
 .trans-desc { font-size: 14px; color: #333; line-height: 1.6; white-space: pre-wrap; }
@@ -631,26 +611,6 @@ body {
 [data-theme="dark"] .badge-source.missing {
   background: rgba(224, 90, 74, 0.18);
   color: #e07a6a;
-}
-
-[data-theme="dark"] .vote-btn {
-  background: #252530;
-  border-color: #2e2e3c;
-  color: #8888a0;
-}
-[data-theme="dark"] .vote-btn:hover {
-  border-color: #5a8fe6;
-  color: #5a8fe6;
-}
-[data-theme="dark"] .vote-btn.voted-up {
-  background: rgba(90, 143, 230, 0.15);
-  border-color: #5a8fe6;
-  color: #7aa8e8;
-}
-[data-theme="dark"] .vote-btn.voted-down {
-  background: rgba(214, 74, 74, 0.15);
-  border-color: #d64a4a;
-  color: #e07a7a;
 }
 
 [data-theme="dark"] .nav-bar {
