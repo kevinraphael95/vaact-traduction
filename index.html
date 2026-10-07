@@ -9,6 +9,9 @@
 </head>
 <body>
 
+<!-- ========================================================================
+     ÉCRAN DE CHARGEMENT
+     ======================================================================== -->
 <div class="loading-screen" id="loadingScreen">
   <div class="loading-box">
     <div class="spinner"></div>
@@ -16,6 +19,9 @@
   </div>
 </div>
 
+<!-- ========================================================================
+     BARRE SUPÉRIEURE
+     ======================================================================== -->
 <div class="topbar">
   <div class="topbar-inner">
     <div class="logo">
@@ -24,19 +30,30 @@
     </div>
     <div class="topbar-center">
       <input type="text" class="search-input" id="searchInput" placeholder="Chercher une carte…">
+
       <label class="filter-vaact" title="Afficher seulement les cartes VAACT (effet modifié)">
         <input type="checkbox" id="vaactFilter">
         <span>VAACT</span>
       </label>
+
+      <label class="filter-vaact" title="Afficher seulement les cartes sans correspondance EN/FR">
+        <input type="checkbox" id="incompleteFilter">
+        <span>⚠️ Incomplètes</span>
+      </label>
+
       <button class="btn-random" id="randomBtn">🎲 Aléatoire</button>
       <button class="btn-theme" id="themeToggle" title="Changer de thème">🌙</button>
     </div>
   </div>
 </div>
 
+<!-- ========================================================================
+     CONTENU PRINCIPAL
+     ======================================================================== -->
 <div class="container" id="mainContainer" style="display:none;">
   <div class="main-grid">
 
+    <!-- Colonne gauche : visuel + infos -->
     <div class="card-visual">
       <div class="card-image">
         <img id="cardImg" alt="">
@@ -50,6 +67,7 @@
       </div>
     </div>
 
+    <!-- Colonne droite : texte original + traduction -->
     <div class="content-col">
       <div class="section">
         <div class="section-title">📖 Texte original (anglais)</div>
@@ -65,6 +83,9 @@
   </div>
 </div>
 
+<!-- ========================================================================
+     BARRE DE NAVIGATION
+     ======================================================================== -->
 <div class="nav-bar" id="navBar" style="display:none;">
   <div class="nav-inner">
     <button class="nav-btn" id="prevBtn">← Précédent</button>
