@@ -77,43 +77,56 @@ function isIncompleteCard(card) {
   return card.missingFr === true || card.missingEn === true;
 }
 
-/** Vrai si au moins un filtre (VAACT, Incomplètes ou recherche) est actif. */
-function hasActiveFilters() {
-  return !!(
-    document.getElementById('vaactFilter')?.checked ||
-    document.getElementById('vaactFilterMobile')?.checked ||
-    document.getElementById('incompleteFilter')?.checked ||
-    document.getElementById('incompleteFilterMobile')?.checked ||
-    searchQuery
-  );
+/** Récupère l'état des filtres depuis le DOM. */
+function getFilterState() {
+  return {
+    vaact: !!document.getElementById('filterVaact')?.checked,
+    incomplete: !!document.getElementById('filterIncomplete')?.checked,
+    search: searchQuery,
+  };
+}
+
+/** Compte combien de filtres sont actifs (pour le badge). */
+function countActiveFilters() {
+  const { vaact, incomplete, search } = getFilterState();
+  return (vaact ? 1 : 0) + (incomplete ? 1 : 0) + (search ? 1 : 0);
 }
 
 function getFilteredCards() {
   let list = CARDS;
+  const { vaact, incomplete, search } = getFilterState();
 
-  // VAACT (desktop OU mobile)
-  const vaactChecked =
-    document.getElementById('vaactFilter')?.checked ||
-    document.getElementById('vaactFilterMobile')?.checked;
-  if (vaactChecked) list = list.filter(isVaactCard);
+  if (vaact) list = list.filter(isVaactCard);
+  if (incomplete) list = list.filter(isIncompleteCard);
 
-  // Incomplètes (desktop OU mobile)
-  const incompleteChecked =
-    document.getElementById('incompleteFilter')?.checked ||
-    document.getElementById('incompleteFilterMobile')?.checked;
-  if (incompleteChecked) list = list.filter(isIncompleteCard);
-
-  // Recherche (nom EN, nom FR, ID)
-  if (searchQuery) {
-    const q = searchQuery;
+  if (search) {
     list = list.filter(c =>
-      (c.name_en || '').toLowerCase().includes(q) ||
-      (c.name_fr || '').toLowerCase().includes(q) ||
-      (c.id || '').includes(q)
+      (c.name_en || '').toLowerCase().includes(search) ||
+      (c.name_fr || '').toLowerCase().includes(search) ||
+      (c.id || '').includes(search)
     );
   }
 
   return list;
+}
+
+/** Met à jour le badge du bouton Filtres + l'état visuel du bouton. */
+function updateFiltersBadge() {
+  const btn = document.getElementById('filtersBtn');
+  if (!btn) return;
+
+  const count = countActiveFilters();
+  btn.classList.toggle('active', count > 0);
+
+  const badge = btn.querySelector('.badge-count');
+  if (badge) {
+    if (count > 0) {
+      badge.textContent = String(count);
+      badge.style.display = 'inline-flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
 }
 
 // ============================================================================
@@ -479,11 +492,56 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ============================================================================
-// RECHERCHE — agit comme un filtre (nom EN, nom FR, ID)
+// PANNEAU FILTRES
+// ============================================================================
+const filtersBtn = document.getElementById('filtersBtn');
+const filtersPanel = document.getElementById('filtersPanel');
+
+function openFiltersPanel() {
+  filtersPanel?.classList.add('open');
+}
+function closeFiltersPanel() {
+  filtersPanel?.classList.remove('open');
+}
+
+if (filtersBtn && filtersPanel) {
+  filtersBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    filtersPanel.classList.toggle('open');
+  });
+
+  // Clic en dehors du panneau → fermeture
+  document.addEventListener('click', (e) => {
+    if (!filtersPanel.contains(e.target) && !filtersBtn.contains(e.target)) {
+      closeFiltersPanel();
+    }
+  });
+
+  // Échap → fermeture
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeFiltersPanel();
+  });
+}
+
+// ============================================================================
+// FILTRES — checkboxes VAACT + Incomplètes
+// ============================================================================
+['filterVaact', 'filterIncomplete'].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('change', () => {
+    currentIndex = 0;
+    render();
+    updateFiltersBadge();
+  });
+});
+
+// ============================================================================
+// RECHERCHE (dans le panneau)
 // ============================================================================
 const searchInput = document.getElementById('searchInput');
+const searchClear = document.getElementById('searchClear');
 
-// Debounce pour ne pas recalculer à chaque frappe
 let searchDebounceTimer = null;
 
 function applySearch(value) {
@@ -491,100 +549,41 @@ function applySearch(value) {
   currentIndex = 0;
   render();
   updateSearchIndicator();
-  updateMobileFiltersIndicator();
+  updateFiltersBadge();
 }
 
-searchInput.addEventListener('input', () => {
-  clearTimeout(searchDebounceTimer);
-  searchDebounceTimer = setTimeout(() => applySearch(searchInput.value), 200);
-});
+if (searchInput) {
+  searchInput.addEventListener('input', () => {
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(() => applySearch(searchInput.value), 200);
+  });
 
-searchInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    clearTimeout(searchDebounceTimer);
-    applySearch(searchInput.value);
-    searchInput.blur();
-  } else if (e.key === 'Escape') {
-    clearTimeout(searchDebounceTimer);
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      clearTimeout(searchDebounceTimer);
+      applySearch(searchInput.value);
+      searchInput.blur();
+    } else if (e.key === 'Escape') {
+      clearTimeout(searchDebounceTimer);
+      searchInput.value = '';
+      applySearch('');
+    }
+  });
+}
+
+if (searchClear) {
+  searchClear.addEventListener('click', () => {
     searchInput.value = '';
     applySearch('');
-  }
-});
+    searchInput.focus();
+  });
+}
 
 /** Affiche/masque la croix × dans le champ quand une recherche est active. */
 function updateSearchIndicator() {
+  if (!searchInput) return;
   const wrap = searchInput.closest('.search-wrap') || searchInput.parentElement;
   if (wrap) wrap.classList.toggle('has-search', !!searchQuery);
-}
-
-// Bouton × (présent uniquement si tu utilises le wrapper dans le HTML)
-document.getElementById('searchClear')?.addEventListener('click', () => {
-  searchInput.value = '';
-  applySearch('');
-  searchInput.focus();
-});
-
-// ============================================================================
-// FILTRES — synchronisation desktop ↔ mobile
-// ============================================================================
-/** Met à jour la pastille rouge sur le bouton ☰ si un filtre est actif. */
-function updateMobileFiltersIndicator() {
-  const btn = document.getElementById('mobileFiltersBtn');
-  if (!btn) return;
-  btn.classList.toggle('active', hasActiveFilters());
-}
-
-/**
- * Lie une paire de checkboxes (desktop + mobile) pour qu'elles soient
- * toujours synchronisées. Un changement sur l'une déclenche un re-render
- * et met à jour la pastille du bouton ☰.
- */
-function bindFilterPair(desktopId, mobileId) {
-  const d = document.getElementById(desktopId);
-  const m = document.getElementById(mobileId);
-
-  const handleChange = (source, target) => () => {
-    if (target) target.checked = source.checked;
-    currentIndex = 0;
-    render();
-    updateMobileFiltersIndicator();
-  };
-
-  if (d) d.addEventListener('change', handleChange(d, m));
-  if (m) m.addEventListener('change', handleChange(m, d));
-}
-
-bindFilterPair('vaactFilter', 'vaactFilterMobile');
-bindFilterPair('incompleteFilter', 'incompleteFilterMobile');
-
-// ============================================================================
-// PANNEAU FILTRES MOBILE
-// ============================================================================
-const mobileFiltersBtn = document.getElementById('mobileFiltersBtn');
-const mobileFiltersPanel = document.getElementById('mobileFiltersPanel');
-
-function openMobileFilters() {
-  mobileFiltersPanel?.classList.add('open');
-}
-function closeMobileFilters() {
-  mobileFiltersPanel?.classList.remove('open');
-}
-
-if (mobileFiltersBtn && mobileFiltersPanel) {
-  mobileFiltersBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    mobileFiltersPanel.classList.toggle('open');
-  });
-
-  document.addEventListener('click', (e) => {
-    if (!mobileFiltersPanel.contains(e.target) && e.target !== mobileFiltersBtn) {
-      closeMobileFilters();
-    }
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeMobileFilters();
-  });
 }
 
 // ============================================================================
@@ -603,17 +602,9 @@ const THEME_KEY = 'vaact-theme';
 
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
-
   const isDark = theme === 'dark';
-  const icon = isDark ? '☀️' : '🌙';
-
-  const btnDesktop = document.getElementById('themeToggle');
-  if (btnDesktop) btnDesktop.textContent = icon;
-
-  const btnMobile = document.getElementById('themeToggleMobile');
-  if (btnMobile) {
-    btnMobile.textContent = isDark ? '☀️ Thème clair' : '🌙 Thème sombre';
-  }
+  const btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = isDark ? '☀️' : '🌙';
 }
 
 (function initTheme() {
@@ -630,14 +621,8 @@ function toggleTheme() {
   applyTheme(next);
 }
 
-document.getElementById('themeToggle').addEventListener('click', toggleTheme);
-
-const themeMobileBtn = document.getElementById('themeToggleMobile');
-if (themeMobileBtn) {
-  themeMobileBtn.addEventListener('click', () => {
-    toggleTheme();
-  });
-}
+const themeBtn = document.getElementById('themeToggle');
+if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
 
 // ============================================================================
 // INIT
