@@ -76,18 +76,29 @@ function isIncompleteCard(card) {
   return card.missingFr === true || card.missingEn === true;
 }
 
+/** Vrai si au moins une checkbox (desktop ou mobile) est cochée. */
+function hasActiveFilters() {
+  return !!(
+    document.getElementById('vaactFilter')?.checked ||
+    document.getElementById('vaactFilterMobile')?.checked ||
+    document.getElementById('incompleteFilter')?.checked ||
+    document.getElementById('incompleteFilterMobile')?.checked
+  );
+}
+
 function getFilteredCards() {
   let list = CARDS;
 
-  const vaactCheckbox = document.getElementById('vaactFilter');
-  if (vaactCheckbox && vaactCheckbox.checked) {
-    list = list.filter(isVaactCard);
-  }
+  const vaactChecked =
+    document.getElementById('vaactFilter')?.checked ||
+    document.getElementById('vaactFilterMobile')?.checked;
 
-  const incompleteCheckbox = document.getElementById('incompleteFilter');
-  if (incompleteCheckbox && incompleteCheckbox.checked) {
-    list = list.filter(isIncompleteCard);
-  }
+  const incompleteChecked =
+    document.getElementById('incompleteFilter')?.checked ||
+    document.getElementById('incompleteFilterMobile')?.checked;
+
+  if (vaactChecked) list = list.filter(isVaactCard);
+  if (incompleteChecked) list = list.filter(isIncompleteCard);
 
   return list;
 }
@@ -151,7 +162,6 @@ async function loadCardImage(card) {
     parent.appendChild(ph);
   }
 
-  // On essaie le nom EN d'abord, puis le nom FR en fallback
   const imgUrl = await fetchCardImage(card.name_en) || await fetchCardImage(card.name_fr);
   if (getFilteredCards()[currentIndex] !== card) return;
   if (!imgUrl) return;
@@ -171,7 +181,6 @@ async function fetchBuffer(url, label) {
   }
   const buf = await res.arrayBuffer();
 
-  // Vérification de l'en-tête SQLite
   const header = new TextDecoder().decode(buf.slice(0, 16));
   if (!header.startsWith('SQLite format 3')) {
     throw new Error(
@@ -277,7 +286,6 @@ function mergeCards(enCards, frCards) {
   const enOnly = [];
   const frOnly = [];
 
-  // 1) Toutes les cartes présentes en EN (avec ou sans FR)
   for (const id in enCards) {
     const en = enCards[id];
     const fr = frCards[id];
@@ -314,7 +322,6 @@ function mergeCards(enCards, frCards) {
     });
   }
 
-  // 2) Cartes présentes uniquement en FR
   for (const id in frCards) {
     if (enCards[id]) continue;
     const fr = frCards[id];
@@ -334,7 +341,6 @@ function mergeCards(enCards, frCards) {
     });
   }
 
-  // Logs récapitulatifs
   if (enOnly.length) {
     console.warn(`⚠️ ${enOnly.length} carte(s) présente(s) en EN mais absente(s) en FR :`);
     console.table(enOnly);
@@ -400,7 +406,6 @@ function renderTranslation(card) {
   const container = document.getElementById('translationSection');
   const isVaact = isVaactCard(card);
 
-  // Badges d'avertissement pour cartes incomplètes
   let missingBadge = '';
   if (card.missingFr) {
     missingBadge = `<span class="badge-source missing">⚠️ Traduction FR manquante</span>`;
@@ -408,7 +413,6 @@ function renderTranslation(card) {
     missingBadge = `<span class="badge-source missing">⚠️ Original EN manquant</span>`;
   }
 
-  // Placeholder pour la zone manquante
   const frName = card.missingFr
     ? '<em style="opacity:.5;">— aucune traduction FR pour cette carte —</em>'
     : esc(card.name_fr || '—');
@@ -432,30 +436,34 @@ function renderTranslation(card) {
 }
 
 // ============================================================================
-// NAV
+// NAVIGATION
 // ============================================================================
-document.getElementById('prevBtn').addEventListener('click', () => {
+function goPrev() {
   if (currentIndex > 0) { currentIndex--; render(); }
-});
-document.getElementById('nextBtn').addEventListener('click', () => {
+}
+function goNext() {
   const filtered = getFilteredCards();
   if (currentIndex < filtered.length - 1) { currentIndex++; render(); }
-});
-document.getElementById('randomBtn').addEventListener('click', () => {
+}
+function goRandom() {
   const filtered = getFilteredCards();
   if (!filtered.length) return;
   currentIndex = Math.floor(Math.random() * filtered.length);
   render();
-});
+}
+
+document.getElementById('prevBtn').addEventListener('click', goPrev);
+document.getElementById('nextBtn').addEventListener('click', goNext);
+document.getElementById('randomBtn').addEventListener('click', goRandom);
+
 document.addEventListener('keydown', (e) => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-  const filtered = getFilteredCards();
-  if (e.key === 'ArrowLeft' && currentIndex > 0) { currentIndex--; render(); }
-  else if (e.key === 'ArrowRight' && currentIndex < filtered.length - 1) { currentIndex++; render(); }
+  if (e.key === 'ArrowLeft') goPrev();
+  else if (e.key === 'ArrowRight') goNext();
 });
 
 // ============================================================================
-// SEARCH
+// RECHERCHE
 // ============================================================================
 document.getElementById('searchInput').addEventListener('keydown', (e) => {
   if (e.key !== 'Enter') return;
@@ -471,18 +479,67 @@ document.getElementById('searchInput').addEventListener('keydown', (e) => {
 });
 
 // ============================================================================
-// FILTRES — events
+// FILTRES — synchronisation desktop ↔ mobile
 // ============================================================================
-document.getElementById('vaactFilter').addEventListener('change', () => {
-  currentIndex = 0;
-  render();
-});
+/** Met à jour la pastille rouge sur le bouton ☰ si un filtre est actif. */
+function updateMobileFiltersIndicator() {
+  const btn = document.getElementById('mobileFiltersBtn');
+  if (!btn) return;
+  btn.classList.toggle('active', hasActiveFilters());
+}
 
-const incompleteFilterEl = document.getElementById('incompleteFilter');
-if (incompleteFilterEl) {
-  incompleteFilterEl.addEventListener('change', () => {
+/**
+ * Lie une paire de checkboxes (desktop + mobile) pour qu'elles soient
+ * toujours synchronisées. Un changement sur l'une déclenche un re-render
+ * et met à jour la pastille du bouton ☰.
+ */
+function bindFilterPair(desktopId, mobileId) {
+  const d = document.getElementById(desktopId);
+  const m = document.getElementById(mobileId);
+
+  const handleChange = (source, target) => () => {
+    if (target) target.checked = source.checked;
     currentIndex = 0;
     render();
+    updateMobileFiltersIndicator();
+  };
+
+  if (d) d.addEventListener('change', handleChange(d, m));
+  if (m) m.addEventListener('change', handleChange(m, d));
+}
+
+bindFilterPair('vaactFilter', 'vaactFilterMobile');
+bindFilterPair('incompleteFilter', 'incompleteFilterMobile');
+
+// ============================================================================
+// PANNEAU FILTRES MOBILE
+// ============================================================================
+const mobileFiltersBtn = document.getElementById('mobileFiltersBtn');
+const mobileFiltersPanel = document.getElementById('mobileFiltersPanel');
+
+function openMobileFilters() {
+  mobileFiltersPanel?.classList.add('open');
+}
+function closeMobileFilters() {
+  mobileFiltersPanel?.classList.remove('open');
+}
+
+if (mobileFiltersBtn && mobileFiltersPanel) {
+  mobileFiltersBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    mobileFiltersPanel.classList.toggle('open');
+  });
+
+  // Clic en dehors du panneau → fermeture
+  document.addEventListener('click', (e) => {
+    if (!mobileFiltersPanel.contains(e.target) && e.target !== mobileFiltersBtn) {
+      closeMobileFilters();
+    }
+  });
+
+  // Échap → fermeture
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeMobileFilters();
   });
 }
 
@@ -500,6 +557,21 @@ function esc(s) {
 // ============================================================================
 const THEME_KEY = 'vaact-theme';
 
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+
+  const isDark = theme === 'dark';
+  const icon = isDark ? '☀️' : '🌙';
+
+  const btnDesktop = document.getElementById('themeToggle');
+  if (btnDesktop) btnDesktop.textContent = icon;
+
+  const btnMobile = document.getElementById('themeToggleMobile');
+  if (btnMobile) {
+    btnMobile.textContent = isDark ? '☀️ Thème clair' : '🌙 Thème sombre';
+  }
+}
+
 (function initTheme() {
   const saved = localStorage.getItem(THEME_KEY);
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -507,18 +579,22 @@ const THEME_KEY = 'vaact-theme';
   applyTheme(theme);
 })();
 
-function applyTheme(theme) {
-  document.documentElement.setAttribute('data-theme', theme);
-  const btn = document.getElementById('themeToggle');
-  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
-}
-
-document.getElementById('themeToggle').addEventListener('click', () => {
+function toggleTheme() {
   const current = document.documentElement.getAttribute('data-theme') || 'light';
   const next = current === 'dark' ? 'light' : 'dark';
   localStorage.setItem(THEME_KEY, next);
   applyTheme(next);
-});
+}
+
+document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+
+const themeMobileBtn = document.getElementById('themeToggleMobile');
+if (themeMobileBtn) {
+  themeMobileBtn.addEventListener('click', () => {
+    toggleTheme();
+    // Le panneau reste ouvert pour voir le changement
+  });
+}
 
 // ============================================================================
 // INIT
