@@ -88,6 +88,7 @@ body {
   justify-content: flex-end;
 }
 
+/* ---------- CHAMP DE RECHERCHE ---------- */
 .search-input {
   flex: 1;
   min-width: 120px;
@@ -105,6 +106,42 @@ body {
   box-shadow: 0 0 0 3px rgba(74, 127, 214, 0.15);
 }
 
+/* Wrapper avec bouton × */
+.search-wrap {
+  flex: 1;
+  min-width: 120px;
+  position: relative;
+  display: flex;
+}
+.search-wrap .search-input {
+  width: 100%;
+  padding-right: 32px;   /* espace pour le × */
+}
+.search-clear {
+  display: none;
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: #d0d5dc;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  font-family: inherit;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.search-clear:hover { background: #4a7fd6; }
+.search-wrap.has-search .search-clear { display: inline-flex; }
+
+/* ---------- BOUTONS TOPBAR ---------- */
 .btn-random {
   padding: 9px 16px;
   background: #fff;
@@ -546,6 +583,15 @@ body {
     padding: 8px 10px;
     min-width: 0;
   }
+  .search-wrap .search-input {
+    padding-right: 30px;  /* espace pour le × en mobile aussi */
+  }
+  .search-clear {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+    right: 5px;
+  }
 
   /* 🎲 compact : juste l'icône */
   .btn-random {
@@ -645,6 +691,11 @@ body {
   background: #1e1e28;
   border-color: #5a8fe6;
 }
+
+/* Croix × en mode sombre */
+[data-theme="dark"] .search-clear { background: #3a3a4c; }
+[data-theme="dark"] .search-clear:hover { background: #5a8fe6; }
+
 [data-theme="dark"] .btn-random {
   background: #252530;
   border-color: #2e2e3c;
