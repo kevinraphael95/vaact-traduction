@@ -41,41 +41,36 @@
       <span class="logo-text">VAACT - Vérificateur de Traduction</span>
     </div>
 
-    <div class="topbar-spacer"></div>
-
-    <div class="topbar-actions">
-      <!-- Bouton filtres avec badge de compteur -->
-      <button class="btn-filters" id="filtersBtn" title="Filtres" aria-label="Filtres">
-        <span>≡ Filtres</span>
-        <span class="badge-count" style="display:none;">0</span>
-      </button>
-
-      <!-- Aléatoire -->
-      <button class="btn-random" id="randomBtn" title="Carte aléatoire">
-        🎲 <span class="btn-random-label">Aléatoire</span>
-      </button>
-
-      <!-- Thème -->
-      <button class="btn-theme" id="themeToggle" title="Changer de thème">🌙</button>
+    <!-- Barre de recherche : toujours visible dans la topbar -->
+    <div class="search-wrap">
+      <input type="text" class="search-input" id="searchInput" placeholder="Chercher une carte…">
+      <button type="button" class="search-clear" id="searchClear" title="Effacer" aria-label="Effacer">✕</button>
     </div>
+
+    <!-- Bouton Filtres avec badge de compteur -->
+    <button class="btn-filters" id="filtersBtn" title="Filtres" aria-label="Filtres">
+      <span class="btn-filters-label">≡ Filtres</span>
+      <span class="badge-count" style="display:none;">0</span>
+    </button>
+
+    <!-- Aléatoire -->
+    <button class="btn-random" id="randomBtn" title="Carte aléatoire">
+      🎲 <span class="btn-random-label">Aléatoire</span>
+    </button>
+
+    <!-- Thème -->
+    <button class="btn-theme" id="themeToggle" title="Changer de thème">🌙</button>
 
   </div>
 </div>
 
 <!-- ========================================================================
-     PANNEAU FILTRES (dropdown)
+     PANNEAU FILTRES (VAACT + Incomplètes uniquement)
      ======================================================================== -->
 <div class="filters-panel" id="filtersPanel">
 
   <div class="filters-panel-title">Filtres</div>
 
-  <!-- Champ de recherche -->
-  <div class="search-wrap">
-    <input type="text" class="search-input" id="searchInput" placeholder="🔍 Nom, ID…">
-    <button type="button" class="search-clear" id="searchClear" title="Effacer" aria-label="Effacer">✕</button>
-  </div>
-
-  <!-- Options -->
   <label class="filter-option">
     <input type="checkbox" id="filterVaact">
     <span class="label-text">VAACT uniquement</span>
