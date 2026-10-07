@@ -9,7 +9,6 @@ const CDB_FR_URL = 'data/VAACT_S1_fr.cdb';
 // ============================================================================
 let CARDS = [];
 let currentIndex = 0;
-let searchQuery = '';              // recherche topbar (lowercase, trimmed)
 let customKeywords = [];           // filtres personnalisés (lowercase)
 const CUSTOM_KEYWORDS_LS = 'vaact-custom-keywords';
 
@@ -101,34 +100,24 @@ function getFilterState() {
   return {
     vaact: !!document.getElementById('filterVaact')?.checked,
     incomplete: !!document.getElementById('filterIncomplete')?.checked,
-    search: searchQuery,
     keywords: customKeywords,
   };
 }
 
 /** Compte combien de filtres sont actifs (pour le badge). */
 function countActiveFilters() {
-  const { vaact, incomplete, search, keywords } = getFilterState();
-  return (vaact ? 1 : 0) + (incomplete ? 1 : 0) + (search ? 1 : 0) + keywords.length;
+  const { vaact, incomplete, keywords } = getFilterState();
+  return (vaact ? 1 : 0) + (incomplete ? 1 : 0) + keywords.length;
 }
 
 function getFilteredCards() {
   let list = CARDS;
-  const { vaact, incomplete, search, keywords } = getFilterState();
+  const { vaact, incomplete, keywords } = getFilterState();
 
   if (vaact) list = list.filter(isVaactCard);
   if (incomplete) list = list.filter(isIncompleteCard);
 
-  if (search) {
-    list = list.filter(c =>
-      (c.name_en || '').toLowerCase().includes(search) ||
-      (c.name_fr || '').toLowerCase().includes(search) ||
-      (c.id || '').includes(search)
-    );
-  }
-
   if (keywords.length) {
-    // ET logique : la carte doit contenir TOUS les mots-clés
     list = list.filter(c => {
       const haystack = [
         (c.name_en || '').toLowerCase(),
@@ -431,10 +420,7 @@ function render() {
     document.getElementById('infoStats').textContent = '—';
     document.getElementById('infoLevel').textContent = '—';
     document.getElementById('origName').textContent = '—';
-    document.getElementById('origDesc').textContent =
-      searchQuery
-        ? `Aucune carte ne correspond à « ${esc(searchQuery)} ».`
-        : 'Aucune carte ne correspond aux filtres actifs.';
+    document.getElementById('origDesc').textContent = 'Aucune carte ne correspond aux filtres actifs.';
     document.getElementById('translationSection').innerHTML = '';
     document.getElementById('navCenter').textContent = '0 / 0';
     document.getElementById('prevBtn').disabled = true;
@@ -578,7 +564,6 @@ const customAddBtn = document.getElementById('customAddBtn');
 const customChips = document.getElementById('customChips');
 const customResetBtn = document.getElementById('filterResetBtn');
 
-/** Ajoute un mot-clé (évite les doublons et les vides). */
 function addCustomKeyword(rawValue) {
   const value = (rawValue || '').trim().toLowerCase();
   if (!value) return;
@@ -592,7 +577,6 @@ function addCustomKeyword(rawValue) {
   updateFiltersBadge();
 }
 
-/** Retire un mot-clé par sa valeur. */
 function removeCustomKeyword(value) {
   const idx = customKeywords.indexOf(value);
   if (idx === -1) return;
@@ -604,7 +588,6 @@ function removeCustomKeyword(value) {
   updateFiltersBadge();
 }
 
-/** (Re)dessine les chips. */
 function renderCustomChips() {
   if (!customChips) return;
 
@@ -620,7 +603,6 @@ function renderCustomChips() {
     </span>
   `).join('');
 
-  // Branche le ✕ de chaque chip
   customChips.querySelectorAll('.chip-remove').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -647,15 +629,10 @@ if (customAddBtn && customInput) {
 
 if (customResetBtn) {
   customResetBtn.addEventListener('click', () => {
-    // Reset tous les filtres : VAACT, Incomplètes, recherche, mots-clés
     const v = document.getElementById('filterVaact');
     const i = document.getElementById('filterIncomplete');
     if (v) v.checked = false;
     if (i) i.checked = false;
-
-    searchQuery = '';
-    if (searchInput) searchInput.value = '';
-    updateSearchIndicator();
 
     customKeywords = [];
     saveCustomKeywords();
@@ -668,36 +645,50 @@ if (customResetBtn) {
 }
 
 // ============================================================================
-// RECHERCHE — dans la topbar (toujours visible)
+// RECHERCHE — saute à la première carte correspondante
 // ============================================================================
 const searchInput = document.getElementById('searchInput');
 const searchClear = document.getElementById('searchClear');
 
-let searchDebounceTimer = null;
+/** Affiche/masque la croix × selon le contenu du champ. */
+function updateSearchIndicator() {
+  if (!searchInput) return;
+  const wrap = searchInput.closest('.search-wrap') || searchInput.parentElement;
+  if (wrap) wrap.classList.toggle('has-search', searchInput.value.trim().length > 0);
+}
 
-function applySearch(value) {
-  searchQuery = (value || '').trim().toLowerCase();
-  currentIndex = 0;
-  render();
-  updateSearchIndicator();
-  updateFiltersBadge();
+/** Cherche la première carte correspondante dans la liste filtrée et y saute. */
+function jumpToFirstMatch() {
+  if (!searchInput) return;
+  const q = searchInput.value.trim().toLowerCase();
+  if (!q) return;
+
+  const filtered = getFilteredCards();
+  const found = filtered.findIndex(c =>
+    (c.name_en || '').toLowerCase().includes(q) ||
+    (c.name_fr || '').toLowerCase().includes(q) ||
+    (c.id || '').includes(q)
+  );
+
+  if (found >= 0) {
+    currentIndex = found;
+    render();
+  }
 }
 
 if (searchInput) {
-  searchInput.addEventListener('input', () => {
-    clearTimeout(searchDebounceTimer);
-    searchDebounceTimer = setTimeout(() => applySearch(searchInput.value), 200);
-  });
+  // Met à jour la croix × à chaque frappe
+  searchInput.addEventListener('input', updateSearchIndicator);
 
+  // Entrée → saute à la carte
   searchInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
-      clearTimeout(searchDebounceTimer);
-      applySearch(searchInput.value);
+      e.preventDefault();
+      jumpToFirstMatch();
       searchInput.blur();
     } else if (e.key === 'Escape') {
-      clearTimeout(searchDebounceTimer);
       searchInput.value = '';
-      applySearch('');
+      updateSearchIndicator();
     }
   });
 }
@@ -705,16 +696,9 @@ if (searchInput) {
 if (searchClear) {
   searchClear.addEventListener('click', () => {
     searchInput.value = '';
-    applySearch('');
+    updateSearchIndicator();
     searchInput.focus();
   });
-}
-
-/** Affiche/masque la croix × dans le champ quand une recherche est active. */
-function updateSearchIndicator() {
-  if (!searchInput) return;
-  const wrap = searchInput.closest('.search-wrap') || searchInput.parentElement;
-  if (wrap) wrap.classList.toggle('has-search', !!searchQuery);
 }
 
 // ============================================================================
