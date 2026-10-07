@@ -9,6 +9,7 @@ const CDB_FR_URL = 'data/VAACT_S1_fr.cdb';
 // ============================================================================
 let CARDS = [];
 let currentIndex = 0;
+let searchQuery = '';   // recherche active (lowercase, trimmed)
 
 // ============================================================================
 // TRADUCTION DES CODES YGOPRO
@@ -76,29 +77,41 @@ function isIncompleteCard(card) {
   return card.missingFr === true || card.missingEn === true;
 }
 
-/** Vrai si au moins une checkbox (desktop ou mobile) est cochée. */
+/** Vrai si au moins un filtre (VAACT, Incomplètes ou recherche) est actif. */
 function hasActiveFilters() {
   return !!(
     document.getElementById('vaactFilter')?.checked ||
     document.getElementById('vaactFilterMobile')?.checked ||
     document.getElementById('incompleteFilter')?.checked ||
-    document.getElementById('incompleteFilterMobile')?.checked
+    document.getElementById('incompleteFilterMobile')?.checked ||
+    searchQuery
   );
 }
 
 function getFilteredCards() {
   let list = CARDS;
 
+  // VAACT (desktop OU mobile)
   const vaactChecked =
     document.getElementById('vaactFilter')?.checked ||
     document.getElementById('vaactFilterMobile')?.checked;
+  if (vaactChecked) list = list.filter(isVaactCard);
 
+  // Incomplètes (desktop OU mobile)
   const incompleteChecked =
     document.getElementById('incompleteFilter')?.checked ||
     document.getElementById('incompleteFilterMobile')?.checked;
-
-  if (vaactChecked) list = list.filter(isVaactCard);
   if (incompleteChecked) list = list.filter(isIncompleteCard);
+
+  // Recherche (nom EN, nom FR, ID)
+  if (searchQuery) {
+    const q = searchQuery;
+    list = list.filter(c =>
+      (c.name_en || '').toLowerCase().includes(q) ||
+      (c.name_fr || '').toLowerCase().includes(q) ||
+      (c.id || '').includes(q)
+    );
+  }
 
   return list;
 }
@@ -371,7 +384,10 @@ function render() {
     document.getElementById('infoStats').textContent = '—';
     document.getElementById('infoLevel').textContent = '—';
     document.getElementById('origName').textContent = '—';
-    document.getElementById('origDesc').textContent = 'Aucune carte ne correspond aux filtres actifs.';
+    document.getElementById('origDesc').textContent =
+      searchQuery
+        ? `Aucune carte ne correspond à « ${esc(searchQuery)} ».`
+        : 'Aucune carte ne correspond aux filtres actifs.';
     document.getElementById('translationSection').innerHTML = '';
     document.getElementById('navCenter').textContent = '0 / 0';
     document.getElementById('prevBtn').disabled = true;
@@ -463,19 +479,49 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ============================================================================
-// RECHERCHE
+// RECHERCHE — agit comme un filtre (nom EN, nom FR, ID)
 // ============================================================================
-document.getElementById('searchInput').addEventListener('keydown', (e) => {
-  if (e.key !== 'Enter') return;
-  const q = e.target.value.trim().toLowerCase();
-  if (!q) return;
-  const filtered = getFilteredCards();
-  const found = filtered.findIndex(c =>
-    (c.name_en || '').toLowerCase().includes(q)
-    || (c.name_fr || '').toLowerCase().includes(q)
-    || (c.id || '').includes(q)
-  );
-  if (found >= 0) { currentIndex = found; render(); }
+const searchInput = document.getElementById('searchInput');
+
+// Debounce pour ne pas recalculer à chaque frappe
+let searchDebounceTimer = null;
+
+function applySearch(value) {
+  searchQuery = (value || '').trim().toLowerCase();
+  currentIndex = 0;
+  render();
+  updateSearchIndicator();
+  updateMobileFiltersIndicator();
+}
+
+searchInput.addEventListener('input', () => {
+  clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(() => applySearch(searchInput.value), 200);
+});
+
+searchInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    clearTimeout(searchDebounceTimer);
+    applySearch(searchInput.value);
+    searchInput.blur();
+  } else if (e.key === 'Escape') {
+    clearTimeout(searchDebounceTimer);
+    searchInput.value = '';
+    applySearch('');
+  }
+});
+
+/** Affiche/masque la croix × dans le champ quand une recherche est active. */
+function updateSearchIndicator() {
+  const wrap = searchInput.closest('.search-wrap') || searchInput.parentElement;
+  if (wrap) wrap.classList.toggle('has-search', !!searchQuery);
+}
+
+// Bouton × (présent uniquement si tu utilises le wrapper dans le HTML)
+document.getElementById('searchClear')?.addEventListener('click', () => {
+  searchInput.value = '';
+  applySearch('');
+  searchInput.focus();
 });
 
 // ============================================================================
@@ -530,14 +576,12 @@ if (mobileFiltersBtn && mobileFiltersPanel) {
     mobileFiltersPanel.classList.toggle('open');
   });
 
-  // Clic en dehors du panneau → fermeture
   document.addEventListener('click', (e) => {
     if (!mobileFiltersPanel.contains(e.target) && e.target !== mobileFiltersBtn) {
       closeMobileFilters();
     }
   });
 
-  // Échap → fermeture
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') closeMobileFilters();
   });
@@ -592,7 +636,6 @@ const themeMobileBtn = document.getElementById('themeToggleMobile');
 if (themeMobileBtn) {
   themeMobileBtn.addEventListener('click', () => {
     toggleTheme();
-    // Le panneau reste ouvert pour voir le changement
   });
 }
 
