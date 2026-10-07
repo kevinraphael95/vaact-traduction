@@ -537,7 +537,7 @@ if (filtersBtn && filtersPanel) {
 });
 
 // ============================================================================
-// RECHERCHE (dans le panneau)
+// RECHERCHE — dans la topbar (toujours visible)
 // ============================================================================
 const searchInput = document.getElementById('searchInput');
 const searchClear = document.getElementById('searchClear');
