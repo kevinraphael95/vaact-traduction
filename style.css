@@ -130,6 +130,15 @@ body {
 .search-wrap.has-search .search-clear { display: inline-flex; }
 
 /* ============================================================================
+   WRAPPER ANCRE DU PANNEAU FILTRES
+   ============================================================================ */
+.filters-anchor {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+/* ============================================================================
    BOUTON FILTRES
    ============================================================================ */
 .btn-filters {
@@ -149,7 +158,6 @@ body {
   font-family: inherit;
   white-space: nowrap;
   transition: all 0.15s;
-  position: relative;
   flex-shrink: 0;
 }
 .btn-filters:hover {
@@ -223,13 +231,13 @@ body {
 }
 
 /* ============================================================================
-   PANNEAU FILTRES
+   PANNEAU FILTRES (ancré sous le bouton sur desktop)
    ============================================================================ */
 .filters-panel {
   display: none;
-  position: fixed;
-  top: 68px;
-  right: 20px;
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
   background: #fff;
   border: 1px solid #e0e4e8;
   border-radius: 12px;
@@ -314,7 +322,7 @@ body {
 .filter-option .label-text { flex: 1; }
 
 /* ============================================================================
-   FILTRES PERSONNALISÉS (chips + ajout + reset)
+   FILTRES PERSONNALISÉS
    ============================================================================ */
 .filters-sep {
   height: 1px;
@@ -322,7 +330,6 @@ body {
   margin: 4px 0;
 }
 
-/* Chips des mots-clés actifs */
 .custom-chips {
   display: flex;
   flex-wrap: wrap;
@@ -367,7 +374,6 @@ body {
 }
 .custom-chip .chip-remove:hover { background: rgba(42, 90, 168, 0.35); }
 
-/* Ligne d'ajout d'un mot-clé */
 .custom-add-row {
   display: flex;
   gap: 6px;
@@ -412,7 +418,6 @@ body {
 }
 .custom-hint strong { color: #666; font-style: normal; }
 
-/* Bouton reset global */
 .btn-reset {
   padding: 9px 12px;
   background: #fff;
@@ -623,10 +628,9 @@ body {
 .nav-center { font-size: 13px; color: #777; font-weight: 600; }
 
 /* ============================================================================
-   RESPONSIVE — 900px : bascule label → icône
+   RESPONSIVE — 900px
    ============================================================================ */
 @media (max-width: 900px) {
-  /* Le label texte disparaît, remplacé par ≡ via ::before */
   .btn-filters-label { display: none; }
   .btn-filters::before {
     content: '≡';
@@ -636,7 +640,7 @@ body {
 }
 
 /* ============================================================================
-   RESPONSIVE — 800px : topbar compacte, layout mobile
+   RESPONSIVE — 800px
    ============================================================================ */
 @media (max-width: 800px) {
   body { padding-bottom: 84px; }
@@ -672,7 +676,6 @@ body {
     width: 38px;
     height: 38px;
     padding: 0;
-    font-size: 18px;
     gap: 0;
   }
   .btn-filters .badge-count {
@@ -694,8 +697,13 @@ body {
   }
   .btn-theme { width: 38px; height: 38px; font-size: 15px; }
 
-  /* Panneau filtres : pleine largeur sous la topbar */
+  /* Le wrapper devient statique, le panneau passe en fixed pleine largeur */
+  .filters-anchor {
+    position: static;
+  }
+
   .filters-panel {
+    position: fixed;
     top: 60px;
     right: 10px;
     left: 10px;
