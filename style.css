@@ -236,7 +236,11 @@ body.has-nav { padding-bottom: 80px; }
   flex-shrink: 0;
 }
 
+/* `position: relative` sur le bouton lui-même permet au badge (position:
+ * absolute) de se caler sur SES coins, pas sur ceux de la topbar. Sans ça,
+ * le badge part se coller en haut à droite de la topbar sur mobile. */
 .btn-filters {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -878,7 +882,7 @@ body.has-nav { padding-bottom: 80px; }
   /* Le panneau filtres passe en fixed plein-largeur, ancré sous la topbar.
    * La hauteur est lue depuis --topbar-height (mise à jour en JS) pour
    * ne pas dépendre d'une valeur en dur qui casserait si on change la
-   * topbar. */
+   * topbar (par exemple quand elle passe sur 2 lignes en mobile). */
   .filters-anchor { position: static; }
   .filters-panel {
     position: fixed;
