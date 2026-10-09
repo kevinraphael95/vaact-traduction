@@ -23,12 +23,15 @@
 <!-- ========================================================================
      ÉCRAN DE CHARGEMENT
      ======================================================================== -->
-<div class="loading-screen" id="loadingScreen">
+<div class="loading-screen" id="loadingScreen" role="status" aria-live="polite">
   <div class="loading-box">
     <div class="spinner"></div>
     <div class="loading-text" id="loadingText">Chargement des cartes…</div>
   </div>
 </div>
+
+<!-- Toast (recherche sans résultat, etc.) -->
+<div class="toast" id="toast" hidden role="status" aria-live="polite"></div>
 
 <!-- ========================================================================
      BARRE SUPÉRIEURE
@@ -41,62 +44,57 @@
       <span class="logo-text">VAACT - Vérificateur de Traduction</span>
     </div>
 
-    <!-- Barre de recherche : toujours visible dans la topbar -->
-    <div class="search-wrap">
-      <input type="text" class="search-input" id="searchInput" placeholder="Chercher une carte…">
-      <button type="button" class="search-clear" id="searchClear" title="Effacer" aria-label="Effacer">✕</button>
-    </div>
+    <!-- Groupe de contrôles, collé à droite (même structure que le Traducteur) -->
+    <div class="topbar-center">
 
-    <!-- Wrapper qui ancre le panneau Filtres sous le bouton -->
-    <div class="filters-anchor">
-
-      <button class="btn-filters" id="filtersBtn" title="Filtres" aria-label="Filtres">
-        <span class="btn-filters-label">≡ Filtres</span>
-        <span class="badge-count" style="display:none;">0</span>
-      </button>
-
-      <!-- PANNEAU FILTRES (ancré au bouton) -->
-      <div class="filters-panel" id="filtersPanel">
-
-        <div class="filters-panel-title">Filtres</div>
-
-        <label class="filter-option">
-          <input type="checkbox" id="filterVaact">
-          <span class="label-text">VAACT uniquement</span>
-        </label>
-
-        <label class="filter-option">
-          <input type="checkbox" id="filterIncomplete">
-          <span class="label-text">⚠️ Incomplètes uniquement</span>
-        </label>
-
-        <div class="filters-sep"></div>
-
-        <div class="filters-panel-title">Filtres personnalisés</div>
-
-        <div class="custom-chips" id="customChips"></div>
-
-        <div class="custom-add-row">
-          <input type="text" id="customKeywordInput" placeholder="Ajouter un mot-clé…">
-          <button type="button" class="btn-add" id="customAddBtn" title="Ajouter" aria-label="Ajouter">＋</button>
-        </div>
-
-        <div class="custom-hint">La carte doit contenir <strong>tous</strong> les mots-clés.</div>
-
-        <button type="button" class="btn-reset" id="filterResetBtn">Tout effacer</button>
-
+      <div class="search-wrap">
+        <input type="text" class="search-input" id="searchInput" placeholder="Chercher une carte…" aria-label="Rechercher une carte">
+        <button type="button" class="search-clear" id="searchClear" title="Effacer" aria-label="Effacer la recherche">✕</button>
       </div>
 
+      <div class="filters-anchor">
+        <button class="btn-filters" id="filtersBtn" type="button" title="Filtres" aria-label="Filtres" aria-expanded="false">
+          <span class="btn-filters-label">≡ Filtres</span>
+          <span class="badge-count" style="display:none;">0</span>
+        </button>
+
+        <div class="filters-panel" id="filtersPanel">
+          <div class="filters-panel-title">Filtres</div>
+
+          <label class="filter-option">
+            <input type="checkbox" id="filterVaact">
+            <span class="label-text">VAACT uniquement</span>
+          </label>
+
+          <label class="filter-option">
+            <input type="checkbox" id="filterIncomplete">
+            <span class="label-text">⚠️ Incomplètes uniquement</span>
+          </label>
+
+          <div class="filters-sep"></div>
+
+          <div class="filters-panel-title">Filtres personnalisés</div>
+
+          <div class="custom-chips" id="customChips"></div>
+
+          <div class="custom-add-row">
+            <input type="text" id="customKeywordInput" placeholder="Ajouter un mot-clé…" aria-label="Ajouter un mot-clé">
+            <button type="button" class="btn-add" id="customAddBtn" title="Ajouter" aria-label="Ajouter">＋</button>
+          </div>
+
+          <div class="custom-hint">La carte doit contenir <strong>tous</strong> les mots-clés.</div>
+
+          <button type="button" class="btn-reset" id="filterResetBtn">Tout effacer</button>
+        </div>
+      </div>
+
+      <button class="btn-random" id="randomBtn" type="button" title="Carte aléatoire" aria-label="Carte aléatoire">
+        🎲 <span class="btn-random-label">Aléatoire</span>
+      </button>
+
+      <button class="btn-theme" id="themeToggle" type="button" title="Changer de thème" aria-label="Basculer le thème clair / sombre">🌙</button>
+
     </div>
-
-    <!-- Aléatoire -->
-    <button class="btn-random" id="randomBtn" title="Carte aléatoire">
-      🎲 <span class="btn-random-label">Aléatoire</span>
-    </button>
-
-    <!-- Thème -->
-    <button class="btn-theme" id="themeToggle" title="Changer de thème">🌙</button>
-
   </div>
 </div>
 
@@ -106,7 +104,6 @@
 <div class="container" id="mainContainer" style="display:none;">
   <div class="main-grid">
 
-    <!-- Colonne gauche : visuel + infos -->
     <div class="card-visual">
       <div class="card-image">
         <img id="cardImg" alt="">
@@ -120,12 +117,11 @@
       </div>
     </div>
 
-    <!-- Colonne droite : texte original + traduction -->
     <div class="content-col">
       <div class="section">
         <div class="section-title">📖 Texte original (anglais)</div>
         <div class="original-box">
-          <div class="original-name" id="origName">—</div>
+          <div class="original-name" id="origName" aria-live="polite">—</div>
           <div class="original-desc" id="origDesc">—</div>
         </div>
       </div>
@@ -141,9 +137,9 @@
      ======================================================================== -->
 <div class="nav-bar" id="navBar" style="display:none;">
   <div class="nav-inner">
-    <button class="nav-btn" id="prevBtn">← Précédent</button>
-    <span class="nav-center" id="navCenter">1 / 1</span>
-    <button class="nav-btn" id="nextBtn">Suivant →</button>
+    <button class="nav-btn" id="prevBtn" type="button">← Précédent</button>
+    <span class="nav-center" id="navCenter" aria-live="polite">1 / 1</span>
+    <button class="nav-btn" id="nextBtn" type="button">Suivant →</button>
   </div>
 </div>
 
