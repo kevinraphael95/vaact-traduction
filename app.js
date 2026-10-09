@@ -4,6 +4,8 @@
 const CDB_EN_URL = 'data/VAACT_S1.cdb';
 const CDB_FR_URL = 'data/VAACT_S1_fr.cdb';
 
+const IMAGE_FETCH_TIMEOUT_MS = 8000;
+
 // ============================================================================
 // ÉTAT
 // ============================================================================
@@ -12,7 +14,6 @@ let currentIndex = 0;
 let customKeywords = [];           // filtres personnalisés (lowercase)
 const CUSTOM_KEYWORDS_LS = 'vaact-custom-keywords';
 
-// Restaure les mots-clés sauvegardés
 (function restoreCustomKeywords() {
   try {
     const saved = localStorage.getItem(CUSTOM_KEYWORDS_LS);
@@ -78,8 +79,7 @@ function typeToString(type) {
 
 function formatStat(value) {
   if (value === null || value === undefined) return '—';
-  if (value === -2) return '?';
-  if (value === -1) return '?';
+  if (value === -2 || value === -1) return '?';
   if (value < 0) return '0';
   return String(value);
 }
@@ -95,7 +95,6 @@ function isIncompleteCard(card) {
   return card.missingFr === true || card.missingEn === true;
 }
 
-/** Récupère l'état des filtres depuis le DOM. */
 function getFilterState() {
   return {
     vaact: !!document.getElementById('filterVaact')?.checked,
@@ -104,7 +103,6 @@ function getFilterState() {
   };
 }
 
-/** Compte combien de filtres sont actifs (pour le badge). */
 function countActiveFilters() {
   const { vaact, incomplete, keywords } = getFilterState();
   return (vaact ? 1 : 0) + (incomplete ? 1 : 0) + keywords.length;
@@ -131,7 +129,6 @@ function getFilteredCards() {
   return list;
 }
 
-/** Met à jour le badge du bouton Filtres + l'état visuel du bouton. */
 function updateFiltersBadge() {
   const btn = document.getElementById('filtersBtn');
   if (!btn) return;
@@ -151,71 +148,119 @@ function updateFiltersBadge() {
 }
 
 // ============================================================================
-// IMAGES — Récupération depuis YGOPRODeck par nom
+// TOAST
 // ============================================================================
+let toastTimer;
+function showToast(message) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = message;
+  t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.hidden = true; }, 2500);
+}
+
+// ============================================================================
+// IMAGES — Récupération depuis YGOPRODeck par nom (EN en priorité)
+// ============================================================================
+// Cache en mémoire, clé = id de carte (stable, unique côté YGO).
 const imageCache = {};
 
-async function fetchCardImage(cardName) {
-  if (!cardName) return null;
-  if (imageCache[cardName] !== undefined) return imageCache[cardName];
+async function fetchCardImage(card) {
+  if (!card || !card.id) return null;
+  const key = card.id;
 
-  const lsKey = 'img_' + cardName;
+  if (imageCache[key] !== undefined) return imageCache[key];
+
+  const lsKey = 'img_' + key;
   try {
     const cached = localStorage.getItem(lsKey);
     if (cached) {
-      imageCache[cardName] = cached;
+      imageCache[key] = cached;
       return cached;
     }
   } catch (e) {}
 
+  // L'API accepte le nom EN. Le nom FR ne marche pas en direct sur `name=`.
+  const name = card.name_en || card.name_fr;
+  if (!name) {
+    imageCache[key] = null;
+    return null;
+  }
+
+  // Timeout : si YGOPRODeck pend, on libère l'UI au bout de 8s.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), IMAGE_FETCH_TIMEOUT_MS);
+
   try {
-    const url = `https://db.ygoprodeck.com/api/v7/cardinfo.php?name=${encodeURIComponent(cardName)}`;
-    const res = await fetch(url);
+    const url = `https://db.ygoprodeck.com/api/v7/cardinfo.php?name=${encodeURIComponent(name)}`;
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timer);
+
     if (!res.ok) {
-      imageCache[cardName] = null;
+      imageCache[key] = null;
       return null;
     }
     const data = await res.json();
     const imgUrl = data.data?.[0]?.card_images?.[0]?.image_url_cropped
                 || data.data?.[0]?.card_images?.[0]?.image_url
                 || null;
-    imageCache[cardName] = imgUrl;
+    imageCache[key] = imgUrl;
     if (imgUrl) {
       try { localStorage.setItem(lsKey, imgUrl); } catch (e) {}
     }
     return imgUrl;
   } catch (err) {
-    imageCache[cardName] = null;
+    clearTimeout(timer);
+    imageCache[key] = null;
     return null;
   }
+}
+
+function ensurePlaceholder(parent) {
+  let ph = parent.querySelector('.img-placeholder');
+  if (!ph) {
+    ph = document.createElement('div');
+    ph.className = 'img-placeholder';
+    ph.textContent = '🃏';
+    parent.style.position = 'relative';
+    parent.appendChild(ph);
+  }
+  return ph;
 }
 
 async function loadCardImage(card) {
   const imgEl = document.getElementById('cardImg');
   if (!imgEl) return;
 
+  // Reset des handlers et de l'image affichée
+  imgEl.onload = null;
+  imgEl.onerror = null;
   imgEl.removeAttribute('src');
   imgEl.style.display = 'none';
+  imgEl.alt = card?.name_fr || card?.name_en || 'Carte';
 
   const parent = imgEl.parentElement;
+  ensurePlaceholder(parent);
 
-  let ph = parent.querySelector('.img-placeholder');
-  if (!ph) {
-    ph = document.createElement('div');
-    ph.className = 'img-placeholder';
-    ph.textContent = '🃏';
-    ph.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:48px;color:#555;';
-    parent.style.position = 'relative';
-    parent.appendChild(ph);
-  }
+  const imgUrl = await fetchCardImage(card);
 
-  const imgUrl = await fetchCardImage(card.name_en) || await fetchCardImage(card.name_fr);
+  // L'utilisateur a changé de carte entre temps : on abandonne.
   if (getFilteredCards()[currentIndex] !== card) return;
   if (!imgUrl) return;
 
-  if (ph) ph.remove();
+  // On retire le placeholder seulement quand l'image est bien chargée.
+  imgEl.onload = () => {
+    const ph = parent.querySelector('.img-placeholder');
+    if (ph) ph.remove();
+    imgEl.style.display = 'block';
+  };
+  imgEl.onerror = () => {
+    // L'image a échoué (404 côté CDN) : on garde le placeholder.
+    imgEl.removeAttribute('src');
+    imgEl.style.display = 'none';
+  };
   imgEl.src = imgUrl;
-  imgEl.style.display = 'block';
 }
 
 // ============================================================================
@@ -260,6 +305,10 @@ async function loadCards() {
     const enCards = extractCards(enDb);
     const frCards = extractCards(frDb);
 
+    // Les DBs ne servent plus à rien : on libère la mémoire WebAssembly.
+    enDb.close();
+    frDb.close();
+
     loadingText.textContent = 'Fusion des traductions…';
     CARDS = mergeCards(enCards, frCards);
 
@@ -272,15 +321,21 @@ async function loadCards() {
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('mainContainer').style.display = 'block';
     document.getElementById('navBar').style.display = 'block';
+    document.body.classList.add('has-nav');
 
+    updateTopbarHeight();
     renderCustomChips();
     updateFiltersBadge();
     render();
 
   } catch (err) {
     console.error('❌ Erreur:', err);
-    loadingText.innerHTML = `❌ Erreur : ${err.message}<br><br>
-      <small>Vérifie que les fichiers .cdb sont bien dans <code>data/</code> et accessibles.</small>`;
+    // textContent au lieu d'innerHTML : err.message peut contenir des < >.
+    loadingText.textContent = `❌ Erreur : ${err.message}`;
+    const hint = document.createElement('div');
+    hint.style.cssText = 'margin-top:12px;font-size:12px;opacity:.75;';
+    hint.textContent = 'Vérifie que les fichiers .cdb sont bien dans data/ et accessibles.';
+    loadingText.appendChild(hint);
   }
 }
 
@@ -328,7 +383,7 @@ function extractCards(db) {
 }
 
 // ============================================================================
-// FUSION — avec détection des cartes orphelines
+// FUSION
 // ============================================================================
 function mergeCards(enCards, frCards) {
   const result = [];
@@ -352,6 +407,7 @@ function mergeCards(enCards, frCards) {
         def: en.def ?? null,
         level: en.level ?? null,
         attribute: en.attribute || '',
+        race: en.race ?? null,
         missingFr: true,
       });
       continue;
@@ -368,6 +424,7 @@ function mergeCards(enCards, frCards) {
       def: en.def ?? null,
       level: en.level ?? null,
       attribute: en.attribute || '',
+      race: en.race ?? null,
     });
   }
 
@@ -386,6 +443,7 @@ function mergeCards(enCards, frCards) {
       def: fr.def ?? null,
       level: fr.level ?? null,
       attribute: fr.attribute || '',
+      race: fr.race ?? null,
       missingEn: true,
     });
   }
@@ -414,40 +472,31 @@ function render() {
   const filtered = getFilteredCards();
 
   if (!filtered.length) {
-      document.getElementById('infoId').textContent = '—';
-      document.getElementById('infoType').textContent = '—';
-      document.getElementById('infoAttr').textContent = '—';
-      document.getElementById('infoStats').textContent = '—';
-      document.getElementById('infoLevel').textContent = '—';
-      document.getElementById('origName').textContent = '—';
-      document.getElementById('origDesc').textContent = 'Aucune carte ne correspond aux filtres actifs.';
-      document.getElementById('translationSection').innerHTML = '';
-  
-      // Vider l'image et remettre le placeholder
-      const imgEl = document.getElementById('cardImg');
-      if (imgEl) {
-        imgEl.removeAttribute('src');
-        imgEl.style.display = 'none';
-        const p = imgEl.parentElement;
-        let ph = p.querySelector('.img-placeholder');
-        if (!ph) {
-          ph = document.createElement('div');
-          ph.className = 'img-placeholder';
-          ph.textContent = '🃏';
-          ph.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:48px;color:#555;';
-          p.style.position = 'relative';
-          p.appendChild(ph);
-        }
-      }
-  
-      document.getElementById('navCenter').textContent = '0 / 0';
-      document.getElementById('prevBtn').disabled = true;
-      document.getElementById('nextBtn').disabled = true;
-      return;
+    document.getElementById('infoId').textContent = '—';
+    document.getElementById('infoType').textContent = '—';
+    document.getElementById('infoAttr').textContent = '—';
+    document.getElementById('infoStats').textContent = '—';
+    document.getElementById('infoLevel').textContent = '—';
+    document.getElementById('origName').textContent = '—';
+    document.getElementById('origDesc').textContent = 'Aucune carte ne correspond aux filtres actifs.';
+    document.getElementById('translationSection').innerHTML = '';
+
+    const imgEl = document.getElementById('cardImg');
+    if (imgEl) {
+      imgEl.onload = null;
+      imgEl.onerror = null;
+      imgEl.removeAttribute('src');
+      imgEl.style.display = 'none';
+      ensurePlaceholder(imgEl.parentElement);
+    }
+
+    document.getElementById('navCenter').textContent = '0 / 0';
+    document.getElementById('prevBtn').disabled = true;
+    document.getElementById('nextBtn').disabled = true;
+    return;
   }
 
   if (currentIndex >= filtered.length) currentIndex = 0;
-
   const card = filtered[currentIndex];
 
   loadCardImage(card);
@@ -536,33 +585,45 @@ const filtersBtn = document.getElementById('filtersBtn');
 const filtersPanel = document.getElementById('filtersPanel');
 
 function openFiltersPanel() {
-  filtersPanel?.classList.add('open');
+  if (!filtersPanel) return;
+  filtersPanel.classList.add('open');
+  filtersBtn?.setAttribute('aria-expanded', 'true');
 }
-function closeFiltersPanel() {
-  filtersPanel?.classList.remove('open');
+function closeFiltersPanel(restoreFocus = false) {
+  if (!filtersPanel) return;
+  const wasOpen = filtersPanel.classList.contains('open');
+  filtersPanel.classList.remove('open');
+  filtersBtn?.setAttribute('aria-expanded', 'false');
+  if (wasOpen && restoreFocus) filtersBtn?.focus();
 }
 
 if (filtersBtn && filtersPanel) {
   filtersBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    filtersPanel.classList.toggle('open');
+    if (filtersPanel.classList.contains('open')) {
+      closeFiltersPanel();
+    } else {
+      openFiltersPanel();
+    }
   });
 
-  // Clic en dehors du panneau → fermeture
+  // Clic en dehors du panneau → fermeture (sans voler le focus)
   document.addEventListener('click', (e) => {
     if (!filtersPanel.contains(e.target) && !filtersBtn.contains(e.target)) {
       closeFiltersPanel();
     }
   });
 
-  // Échap → fermeture
+  // Échap → fermeture + retour du focus sur le bouton
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeFiltersPanel();
+    if (e.key === 'Escape' && filtersPanel.classList.contains('open')) {
+      closeFiltersPanel(true);
+    }
   });
 }
 
 // ============================================================================
-// FILTRES — checkboxes VAACT + Incomplètes
+// FILTRES — checkboxes
 // ============================================================================
 ['filterVaact', 'filterIncomplete'].forEach(id => {
   const el = document.getElementById(id);
@@ -575,7 +636,7 @@ if (filtersBtn && filtersPanel) {
 });
 
 // ============================================================================
-// FILTRES PERSONNALISÉS — mots-clés cumulables
+// FILTRES PERSONNALISÉS
 // ============================================================================
 const customInput = document.getElementById('customKeywordInput');
 const customAddBtn = document.getElementById('customAddBtn');
@@ -617,7 +678,7 @@ function renderCustomChips() {
   customChips.innerHTML = customKeywords.map(kw => `
     <span class="custom-chip">
       <span class="chip-label">${esc(kw)}</span>
-      <button type="button" class="chip-remove" data-keyword="${esc(kw)}" title="Retirer" aria-label="Retirer ${esc(kw)}">✕</button>
+      <button type="button" class="chip-remove" data-keyword="${esc(kw)}" title="Retirer" aria-label="Retirer le filtre : ${esc(kw)}">✕</button>
     </span>
   `).join('');
 
@@ -663,19 +724,17 @@ if (customResetBtn) {
 }
 
 // ============================================================================
-// RECHERCHE — saute à la première carte correspondante
+// RECHERCHE
 // ============================================================================
 const searchInput = document.getElementById('searchInput');
 const searchClear = document.getElementById('searchClear');
 
-/** Affiche/masque la croix × selon le contenu du champ. */
 function updateSearchIndicator() {
   if (!searchInput) return;
   const wrap = searchInput.closest('.search-wrap') || searchInput.parentElement;
   if (wrap) wrap.classList.toggle('has-search', searchInput.value.trim().length > 0);
 }
 
-/** Cherche la première carte correspondante dans la liste filtrée et y saute. */
 function jumpToFirstMatch() {
   if (!searchInput) return;
   const q = searchInput.value.trim().toLowerCase();
@@ -691,14 +750,15 @@ function jumpToFirstMatch() {
   if (found >= 0) {
     currentIndex = found;
     render();
+  } else {
+    // Aucun résultat : on le dit au lieu de ne rien faire.
+    showToast(`Aucune carte ne correspond à « ${q} »`);
   }
 }
 
 if (searchInput) {
-  // Met à jour la croix × à chaque frappe
   searchInput.addEventListener('input', updateSearchIndicator);
 
-  // Entrée → saute à la carte
   searchInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -720,6 +780,16 @@ if (searchClear) {
 }
 
 // ============================================================================
+// HAUTEUR DE TOPBAR — pour positionner le panneau filtres mobile
+// ============================================================================
+function updateTopbarHeight() {
+  const topbar = document.querySelector('.topbar');
+  if (!topbar) return;
+  document.documentElement.style.setProperty('--topbar-height', topbar.offsetHeight + 'px');
+}
+window.addEventListener('resize', updateTopbarHeight);
+
+// ============================================================================
 // UTIL
 // ============================================================================
 function esc(s) {
@@ -729,7 +799,7 @@ function esc(s) {
 }
 
 // ============================================================================
-// THÈME SOMBRE
+// THÈME
 // ============================================================================
 const THEME_KEY = 'vaact-theme';
 
@@ -737,7 +807,10 @@ function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   const isDark = theme === 'dark';
   const btn = document.getElementById('themeToggle');
-  if (btn) btn.textContent = isDark ? '☀️' : '🌙';
+  if (btn) {
+    btn.textContent = isDark ? '☀️' : '🌙';
+    btn.setAttribute('aria-label', isDark ? 'Basculer en thème clair' : 'Basculer en thème sombre');
+  }
 }
 
 (function initTheme() {
