@@ -4,39 +4,29 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VAACT Trad Vérif</title>
-<meta name="description" content="Vérificateur de traduction pour les fichiers .cdb Yu-Gi-Oh! — compare le fichier original anglais et la traduction française, carte par carte.">
 <link rel="stylesheet" href="style.css">
 <script>
-  // Application du thème avant le rendu pour éviter le flash clair.
-  // Ce script doit rester inline et sans defer : il doit s'exécuter avant
-  // le premier paint, sinon l'utilisateur voit un flash clair→sombre.
-  (function () {
-    var theme = "light";
+  // Application du thème avant le rendu pour éviter le flash clair
+  (function() {
     try {
-      var stored = localStorage.getItem('vaact-theme');
-      if (stored) theme = stored;
-      else if (window.matchMedia('(prefers-color-scheme: dark)').matches) theme = 'dark';
-    } catch (e) {
-      try {
-        if (window.matchMedia('(prefers-color-scheme: dark)').matches) theme = 'dark';
-      } catch (e2) {}
-    }
-    document.documentElement.setAttribute('data-theme', theme);
+      const saved = localStorage.getItem('vaact-theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = saved || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    } catch (e) {}
   })();
 </script>
-<!-- defer : le HTML s'affiche d'abord, sql.js se charge en parallèle.
-     Sans defer, un CDN lent bloque le premier paint. -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
 </head>
 <body>
 
 <!-- ========================================================================
      ÉCRAN DE CHARGEMENT
      ======================================================================== -->
-<div class="loading-screen" id="loadingScreen">
+<div class="loading-screen" id="loadingScreen" role="status" aria-live="polite">
   <div class="loading-box">
-    <div class="spinner" aria-hidden="true"></div>
-    <div class="loading-text" id="loadingText" role="status" aria-live="polite">Chargement des cartes…</div>
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">Chargement des cartes…</div>
   </div>
 </div>
 
@@ -46,36 +36,29 @@
 <!-- ========================================================================
      BARRE SUPÉRIEURE
      ======================================================================== -->
-<header class="topbar">
+<div class="topbar">
   <div class="topbar-inner">
 
     <div class="logo">
-      <div class="logo-icon" aria-hidden="true">⚔️</div>
+      <div class="logo-icon">⚔️</div>
       <span class="logo-text">VAACT - Vérificateur de Traduction</span>
     </div>
 
-    <!-- Groupe de contrôles, collé à droite -->
+    <!-- Groupe de contrôles, collé à droite (même structure que le Traducteur) -->
     <div class="topbar-center">
 
-      <div class="search-wrap" role="search">
-        <input
-          type="search"
-          class="search-input"
-          id="searchInput"
-          placeholder="Chercher une carte…"
-          aria-label="Rechercher une carte"
-          autocomplete="off"
-        >
+      <div class="search-wrap">
+        <input type="text" class="search-input" id="searchInput" placeholder="Chercher une carte…" aria-label="Rechercher une carte">
         <button type="button" class="search-clear" id="searchClear" title="Effacer" aria-label="Effacer la recherche">✕</button>
       </div>
 
       <div class="filters-anchor">
-        <button class="btn-filters" id="filtersBtn" type="button" title="Filtres" aria-label="Filtres" aria-expanded="false" aria-controls="filtersPanel">
+        <button class="btn-filters" id="filtersBtn" type="button" title="Filtres" aria-label="Filtres" aria-expanded="false">
           <span class="btn-filters-label">≡ Filtres</span>
           <span class="badge-count" style="display:none;">0</span>
         </button>
 
-        <div class="filters-panel" id="filtersPanel" role="dialog" aria-label="Filtres">
+        <div class="filters-panel" id="filtersPanel">
           <div class="filters-panel-title">Filtres</div>
 
           <label class="filter-option">
@@ -95,7 +78,7 @@
           <div class="custom-chips" id="customChips"></div>
 
           <div class="custom-add-row">
-            <input type="text" id="customKeywordInput" placeholder="Ajouter un mot-clé…" aria-label="Ajouter un mot-clé" autocomplete="off">
+            <input type="text" id="customKeywordInput" placeholder="Ajouter un mot-clé…" aria-label="Ajouter un mot-clé">
             <button type="button" class="btn-add" id="customAddBtn" title="Ajouter" aria-label="Ajouter">＋</button>
           </div>
 
@@ -106,19 +89,19 @@
       </div>
 
       <button class="btn-random" id="randomBtn" type="button" title="Carte aléatoire" aria-label="Carte aléatoire">
-        <span aria-hidden="true">🎲</span> <span class="btn-random-label">Aléatoire</span>
+        🎲 <span class="btn-random-label">Aléatoire</span>
       </button>
 
       <button class="btn-theme" id="themeToggle" type="button" title="Changer de thème" aria-label="Basculer le thème clair / sombre">🌙</button>
 
     </div>
   </div>
-</header>
+</div>
 
 <!-- ========================================================================
      CONTENU PRINCIPAL
      ======================================================================== -->
-<main class="container" id="mainContainer" hidden>
+<div class="container" id="mainContainer" style="display:none;">
   <div class="main-grid">
 
     <div class="card-visual">
@@ -143,22 +126,22 @@
         </div>
       </div>
 
-      <div id="translationSection" aria-live="polite"></div>
+      <div id="translationSection"></div>
     </div>
 
   </div>
-</main>
+</div>
 
 <!-- ========================================================================
      BARRE DE NAVIGATION
      ======================================================================== -->
-<nav class="nav-bar" id="navBar" hidden aria-label="Navigation entre les cartes">
+<div class="nav-bar" id="navBar" style="display:none;">
   <div class="nav-inner">
     <button class="nav-btn" id="prevBtn" type="button">← Précédent</button>
     <span class="nav-center" id="navCenter" aria-live="polite">1 / 1</span>
     <button class="nav-btn" id="nextBtn" type="button">Suivant →</button>
   </div>
-</nav>
+</div>
 
 <script src="app.js"></script>
 </body>
