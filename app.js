@@ -414,18 +414,36 @@ function render() {
   const filtered = getFilteredCards();
 
   if (!filtered.length) {
-    document.getElementById('infoId').textContent = '—';
-    document.getElementById('infoType').textContent = '—';
-    document.getElementById('infoAttr').textContent = '—';
-    document.getElementById('infoStats').textContent = '—';
-    document.getElementById('infoLevel').textContent = '—';
-    document.getElementById('origName').textContent = '—';
-    document.getElementById('origDesc').textContent = 'Aucune carte ne correspond aux filtres actifs.';
-    document.getElementById('translationSection').innerHTML = '';
-    document.getElementById('navCenter').textContent = '0 / 0';
-    document.getElementById('prevBtn').disabled = true;
-    document.getElementById('nextBtn').disabled = true;
-    return;
+      document.getElementById('infoId').textContent = '—';
+      document.getElementById('infoType').textContent = '—';
+      document.getElementById('infoAttr').textContent = '—';
+      document.getElementById('infoStats').textContent = '—';
+      document.getElementById('infoLevel').textContent = '—';
+      document.getElementById('origName').textContent = '—';
+      document.getElementById('origDesc').textContent = 'Aucune carte ne correspond aux filtres actifs.';
+      document.getElementById('translationSection').innerHTML = '';
+  
+      // Vider l'image et remettre le placeholder
+      const imgEl = document.getElementById('cardImg');
+      if (imgEl) {
+        imgEl.removeAttribute('src');
+        imgEl.style.display = 'none';
+        const p = imgEl.parentElement;
+        let ph = p.querySelector('.img-placeholder');
+        if (!ph) {
+          ph = document.createElement('div');
+          ph.className = 'img-placeholder';
+          ph.textContent = '🃏';
+          ph.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:48px;color:#555;';
+          p.style.position = 'relative';
+          p.appendChild(ph);
+        }
+      }
+  
+      document.getElementById('navCenter').textContent = '0 / 0';
+      document.getElementById('prevBtn').disabled = true;
+      document.getElementById('nextBtn').disabled = true;
+      return;
   }
 
   if (currentIndex >= filtered.length) currentIndex = 0;
