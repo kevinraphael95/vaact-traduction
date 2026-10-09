@@ -905,23 +905,28 @@ body {
    * contenu. */
   .main-grid { grid-template-columns: 1fr; gap: 12px; }
 
+  /* Carte : image à gauche, infos à droite (comme le Traducteur) au lieu
+   * de l'image centrée + infos en dessous en grille 2×2. */
   .card-visual {
     position: static; /* plus de sticky en mobile */
     padding: 12px;
-    display: block;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
   }
   .card-image {
     width: 140px;
     height: 140px;
-    margin: 0 auto 12px;
+    flex-shrink: 0;
+    margin-bottom: 0;
     font-size: 36px;
   }
-  /* Les infos passent en grille 2×3 (au lieu d'une liste verticale). */
   .card-info {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    flex: 1;
+    min-width: 0;
     gap: 5px;
   }
+
   .info-row { padding: 6px 9px; font-size: 11px; }
   .info-row .label { font-size: 9px; }
   .info-row .value { font-size: 11px; }
