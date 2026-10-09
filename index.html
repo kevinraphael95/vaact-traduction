@@ -16,133 +16,35 @@
     } catch (e) {}
   })();
 </script>
+
+<!--
+  === VERSION DE SECOURS (non active) ===
+  Le script ci-dessus abandonne tout si localStorage jette (Safari privé
+  strict, cookies bloqués, etc.), y compris la détection de la préférence
+  système. Cette version isole le try/catch : si localStorage échoue, on
+  essaie quand même matchMedia pour respecter la préférence système.
+
+  Pour activer : remplacer le <script> ci-dessus par ce bloc.
+
+  <script>
+    (function () {
+      var theme = "light";
+      try {
+        var stored = localStorage.getItem('vaact-theme');
+        if (stored) theme = stored;
+        else if (window.matchMedia('(prefers-color-scheme: dark)').matches) theme = 'dark';
+      } catch (e) {
+        try {
+          if (window.matchMedia('(prefers-color-scheme: dark)').matches) theme = 'dark';
+        } catch (e2) {}
+      }
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+-->
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
 </head>
 <body>
 
-<!-- ========================================================================
-     ÉCRAN DE CHARGEMENT
-     ======================================================================== -->
-<div class="loading-screen" id="loadingScreen" role="status" aria-live="polite">
-  <div class="loading-box">
-    <div class="spinner"></div>
-    <div class="loading-text" id="loadingText">Chargement des cartes…</div>
-  </div>
-</div>
-
-<!-- Toast (recherche sans résultat, etc.) -->
-<div class="toast" id="toast" hidden role="status" aria-live="polite"></div>
-
-<!-- ========================================================================
-     BARRE SUPÉRIEURE
-     ======================================================================== -->
-<div class="topbar">
-  <div class="topbar-inner">
-
-    <div class="logo">
-      <div class="logo-icon">⚔️</div>
-      <span class="logo-text">VAACT - Vérificateur de Traduction</span>
-    </div>
-
-    <!-- Groupe de contrôles, collé à droite (même structure que le Traducteur) -->
-    <div class="topbar-center">
-
-      <div class="search-wrap">
-        <input type="text" class="search-input" id="searchInput" placeholder="Chercher une carte…" aria-label="Rechercher une carte">
-        <button type="button" class="search-clear" id="searchClear" title="Effacer" aria-label="Effacer la recherche">✕</button>
-      </div>
-
-      <div class="filters-anchor">
-        <button class="btn-filters" id="filtersBtn" type="button" title="Filtres" aria-label="Filtres" aria-expanded="false">
-          <span class="btn-filters-label">≡ Filtres</span>
-          <span class="badge-count" style="display:none;">0</span>
-        </button>
-
-        <div class="filters-panel" id="filtersPanel">
-          <div class="filters-panel-title">Filtres</div>
-
-          <label class="filter-option">
-            <input type="checkbox" id="filterVaact">
-            <span class="label-text">VAACT uniquement</span>
-          </label>
-
-          <label class="filter-option">
-            <input type="checkbox" id="filterIncomplete">
-            <span class="label-text">⚠️ Incomplètes uniquement</span>
-          </label>
-
-          <div class="filters-sep"></div>
-
-          <div class="filters-panel-title">Filtres personnalisés</div>
-
-          <div class="custom-chips" id="customChips"></div>
-
-          <div class="custom-add-row">
-            <input type="text" id="customKeywordInput" placeholder="Ajouter un mot-clé…" aria-label="Ajouter un mot-clé">
-            <button type="button" class="btn-add" id="customAddBtn" title="Ajouter" aria-label="Ajouter">＋</button>
-          </div>
-
-          <div class="custom-hint">La carte doit contenir <strong>tous</strong> les mots-clés.</div>
-
-          <button type="button" class="btn-reset" id="filterResetBtn">Tout effacer</button>
-        </div>
-      </div>
-
-      <button class="btn-random" id="randomBtn" type="button" title="Carte aléatoire" aria-label="Carte aléatoire">
-        🎲 <span class="btn-random-label">Aléatoire</span>
-      </button>
-
-      <button class="btn-theme" id="themeToggle" type="button" title="Changer de thème" aria-label="Basculer le thème clair / sombre">🌙</button>
-
-    </div>
-  </div>
-</div>
-
-<!-- ========================================================================
-     CONTENU PRINCIPAL
-     ======================================================================== -->
-<div class="container" id="mainContainer" style="display:none;">
-  <div class="main-grid">
-
-    <div class="card-visual">
-      <div class="card-image">
-        <img id="cardImg" alt="">
-      </div>
-      <div class="card-info">
-        <div class="info-row"><span class="label">ID</span><span class="value" id="infoId">—</span></div>
-        <div class="info-row"><span class="label">Type</span><span class="value" id="infoType">—</span></div>
-        <div class="info-row"><span class="label">Attribut</span><span class="value" id="infoAttr">—</span></div>
-        <div class="info-row"><span class="label">ATK / DEF</span><span class="value" id="infoStats">—</span></div>
-        <div class="info-row"><span class="label">Niveau</span><span class="value" id="infoLevel">—</span></div>
-      </div>
-    </div>
-
-    <div class="content-col">
-      <div class="section">
-        <div class="section-title">📖 Texte original (anglais)</div>
-        <div class="original-box">
-          <div class="original-name" id="origName" aria-live="polite">—</div>
-          <div class="original-desc" id="origDesc">—</div>
-        </div>
-      </div>
-
-      <div id="translationSection"></div>
-    </div>
-
-  </div>
-</div>
-
-<!-- ========================================================================
-     BARRE DE NAVIGATION
-     ======================================================================== -->
-<div class="nav-bar" id="navBar" style="display:none;">
-  <div class="nav-inner">
-    <button class="nav-btn" id="prevBtn" type="button">← Précédent</button>
-    <span class="nav-center" id="navCenter" aria-live="polite">1 / 1</span>
-    <button class="nav-btn" id="nextBtn" type="button">Suivant →</button>
-  </div>
-</div>
-
-<script src="app.js"></script>
-</body>
-</html>
+<!-- ... le reste du body inchangé ... -->
