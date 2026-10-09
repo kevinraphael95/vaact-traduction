@@ -34,8 +34,23 @@
 // ============================================================================
 // 1. CONFIG
 // ============================================================================
-const CDB_EN_URL = 'data/VAACT_S1.cdb';
-const CDB_FR_URL = 'data/VAACT_S1_fr.cdb';
+// Les .cdb sont chargés directement depuis les dépôts GitHub distants
+// (raw.githubusercontent.com). Aucun fichier local à maintenir dans le repo.
+// Pour revenir aux fichiers locaux, commenter ces 2 lignes et décommenter
+// celles du bloc "VERSION LOCALE" plus bas.
+
+const CDB_EN_URL = 'https://raw.githubusercontent.com/Mazorn/VAACT-Very-Accurate-Anime-Character-Tournament-/main/VAACT_S1.cdb';
+const CDB_FR_URL = 'https://raw.githubusercontent.com/kevinraphael95/VAACT-patch-fr/main/VAACT_S1.cdb';
+
+/* === VERSION LOCALE (désactivée) ===
+ * Si un jour GitHub change ses règles CORS, si un repo est supprimé, ou si
+ * tu veux travailler hors-ligne, réactive ces 2 lignes (et commente celles
+ * du dessus). Il faut alors que les fichiers soient dans un dossier data/
+ * à côté du index.html.
+ *
+ * const CDB_EN_URL = 'data/VAACT_S1.cdb';
+ * const CDB_FR_URL = 'data/VAACT_S1_fr.cdb';
+ */
 
 // Timeout max pour les requêtes vers YGOPRODeck. Au-delà, on abandonne et
 // on laisse le placeholder 🃏 affiché. 8s est un compromis : assez long
