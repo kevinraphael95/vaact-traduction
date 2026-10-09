@@ -85,10 +85,49 @@ function formatStat(value) {
 }
 
 // ============================================================================
+// TAGS AUTO — détecte [XXX] dans les descriptions
+// ============================================================================
+// Un tag est une séquence [A-Z0-9_-]+ entre crochets. Insensible à la casse
+// à la lecture, normalisé en majuscules. Les doublons sont éliminés.
+function extractTags(descFr) {
+  if (!descFr) return [];
+  const matches = descFr.match(/\[([A-Z0-9_-]+)\]/gi);
+  if (!matches) return [];
+  const seen = new Set();
+  const tags = [];
+  for (const m of matches) {
+    const tag = m.slice(1, -1).toUpperCase();
+    if (!seen.has(tag)) { seen.add(tag); tags.push(tag); }
+  }
+  return tags;
+}
+
+// Couleur déterministe à partir du contenu du tag : même tag = même teinte.
+function tagHue(tag) {
+  let h = 0;
+  for (let i = 0; i < tag.length; i++) h = (h * 31 + tag.charCodeAt(i)) % 360;
+  return h;
+}
+
+// Construit le HTML des tags colorés. La couleur dépend du thème actif :
+// pastel sur fond clair, saturée sur fond sombre.
+function renderTagsHtml(descFr) {
+  const tags = extractTags(descFr);
+  if (!tags.length) return '';
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  return tags.map(tag => {
+    const h = tagHue(tag);
+    const bg = isDark ? `hsla(${h}, 60%, 40%, 0.18)` : `hsl(${h}, 70%, 92%)`;
+    const fg = isDark ? `hsl(${h}, 70%, 70%)` : `hsl(${h}, 65%, 32%)`;
+    return `<span class="tag-badge" style="background:${bg};color:${fg}">[${esc(tag)}]</span>`;
+  }).join('');
+}
+
+// ============================================================================
 // FILTRES
 // ============================================================================
 function isVaactCard(card) {
-  return (card.desc_fr || '').trim().startsWith('(VAACT');
+  return extractTags(card.desc_fr).includes('VAACT');
 }
 
 function isIncompleteCard(card) {
@@ -520,7 +559,6 @@ function render() {
 
 function renderTranslation(card) {
   const container = document.getElementById('translationSection');
-  const isVaact = isVaactCard(card);
 
   let missingBadge = '';
   if (card.missingFr) {
@@ -536,12 +574,15 @@ function renderTranslation(card) {
     ? '<em style="opacity:.5;">Cette carte existe dans le fichier EN mais n\'a pas de correspondance dans le fichier FR.</em>'
     : esc(card.desc_fr || '—');
 
+  // Tous les tags (y compris [VAACT]) sont rendus par le même système.
+  const tagsHtml = renderTagsHtml(card.desc_fr);
+
   container.innerHTML = `
     <div class="translation${card.missingFr || card.missingEn ? ' incomplete' : ''}">
       <div class="trans-head">
         <div class="trans-meta">
           <span class="badge-source manual">Traduction</span>
-          ${isVaact ? `<span class="badge-source vaact">VAACT</span>` : ''}
+          ${tagsHtml}
           ${missingBadge}
         </div>
       </div>
@@ -825,6 +866,11 @@ function toggleTheme() {
   const next = current === 'dark' ? 'light' : 'dark';
   localStorage.setItem(THEME_KEY, next);
   applyTheme(next);
+
+  // Les couleurs des tags dépendent du thème : on re-render la carte courante.
+  const filtered = getFilteredCards();
+  const card = filtered[currentIndex];
+  if (card) renderTranslation(card);
 }
 
 const themeBtn = document.getElementById('themeToggle');
