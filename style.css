@@ -3,14 +3,21 @@
    ============================================================================ */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+:root {
+  /* Hauteur de la topbar, mise à jour en JS (utilisée par le panneau filtres mobile). */
+  --topbar-height: 60px;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: #eef0f4;
   color: #1a1a1a;
   font-size: 14px;
   line-height: 1.5;
-  padding-bottom: 80px;
 }
+
+/* Le padding-bottom (place pour la nav-bar) n'est appliqué que quand elle est visible. */
+body.has-nav { padding-bottom: 80px; }
 
 /* ============================================================================
    LOADING
@@ -37,6 +44,35 @@ body {
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-text { color: #666; font-size: 14px; font-weight: 500; }
 
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: none; border-top-color: #d0d5dc; }
+}
+
+/* ============================================================================
+   TOAST
+   ============================================================================ */
+.toast {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20, 20, 30, 0.92);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 100;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  animation: toast-in 0.2s ease;
+  max-width: calc(100vw - 32px);
+  text-align: center;
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, -8px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
 /* ============================================================================
    TOPBAR
    ============================================================================ */
@@ -54,7 +90,19 @@ body {
   padding: 0 20px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+}
+
+/* Groupe de contrôles, poussé à droite. Le search-wrap flex:1 absorbe
+ * les variations de largeur (badge, etc.) sans décaler les boutons. */
+.topbar-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  max-width: 700px;
+  margin-left: auto;
 }
 
 .logo {
@@ -81,7 +129,7 @@ body {
 }
 
 /* ============================================================================
-   BARRE DE RECHERCHE (dans la topbar)
+   BARRE DE RECHERCHE
    ============================================================================ */
 .search-wrap {
   flex: 1;
@@ -98,6 +146,7 @@ body {
   font-size: 14px;
   font-family: inherit;
   background: #f7f8fa;
+  color: inherit;
 }
 .search-input:focus {
   outline: none;
@@ -130,7 +179,7 @@ body {
 .search-wrap.has-search .search-clear { display: inline-flex; }
 
 /* ============================================================================
-   WRAPPER ANCRE DU PANNEAU FILTRES
+   BOUTON FILTRES
    ============================================================================ */
 .filters-anchor {
   position: relative;
@@ -138,9 +187,6 @@ body {
   flex-shrink: 0;
 }
 
-/* ============================================================================
-   BOUTON FILTRES
-   ============================================================================ */
 .btn-filters {
   display: inline-flex;
   align-items: center;
@@ -186,52 +232,7 @@ body {
 }
 
 /* ============================================================================
-   BOUTONS TOPBAR (aléatoire + thème)
-   ============================================================================ */
-.btn-random {
-  padding: 9px 16px;
-  height: 40px;
-  background: #fff;
-  border: 1px solid #d0d5dc;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-  color: #555;
-  white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  transition: all 0.15s;
-  flex-shrink: 0;
-}
-.btn-random:hover { border-color: #4a7fd6; color: #4a7fd6; background: #f7f8fa; }
-
-.btn-theme {
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  background: #fff;
-  border: 1px solid #d0d5dc;
-  border-radius: 8px;
-  font-size: 16px;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.15s;
-}
-.btn-theme:hover {
-  border-color: #4a7fd6;
-  background: #f7f8fa;
-}
-
-/* ============================================================================
-   PANNEAU FILTRES (ancré sous le bouton sur desktop)
+   PANNEAU FILTRES
    ============================================================================ */
 .filters-panel {
   display: none;
@@ -261,7 +262,6 @@ body {
   margin-bottom: 2px;
 }
 
-/* Options de filtre */
 .filter-option {
   display: flex;
   align-items: center;
@@ -388,6 +388,7 @@ body {
   font-size: 13px;
   font-family: inherit;
   background: #f7f8fa;
+  color: inherit;
 }
 .custom-add-row input:focus {
   outline: none;
@@ -435,6 +436,51 @@ body {
 .btn-reset:hover { border-color: #c0392b; color: #c0392b; }
 
 /* ============================================================================
+   BOUTONS TOPBAR
+   ============================================================================ */
+.btn-random {
+  padding: 9px 16px;
+  height: 40px;
+  background: #fff;
+  border: 1px solid #d0d5dc;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  color: #555;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.btn-random:hover { border-color: #4a7fd6; color: #4a7fd6; background: #f7f8fa; }
+
+.btn-theme {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: #fff;
+  border: 1px solid #d0d5dc;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.btn-theme:hover {
+  border-color: #4a7fd6;
+  background: #f7f8fa;
+}
+
+/* ============================================================================
    LAYOUT
    ============================================================================ */
 .container { max-width: 1100px; margin: 24px auto; padding: 0 20px; }
@@ -479,6 +525,17 @@ body {
   object-fit: cover;
   display: block;
 }
+.img-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  color: #555;
+  pointer-events: none;
+}
+
 .card-info { display: flex; flex-direction: column; gap: 6px; }
 
 .info-row {
@@ -501,7 +558,7 @@ body {
 .info-row .value {
   color: #1a1a1a;
   font-weight: 600;
-  font-family: 'SF Mono', monospace;
+  font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
   text-align: right;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -594,6 +651,7 @@ body {
   background: #fff;
   border-top: 1px solid #e0e4e8;
   padding: 12px 20px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   z-index: 20;
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
 }
@@ -643,7 +701,7 @@ body {
    RESPONSIVE — 800px
    ============================================================================ */
 @media (max-width: 800px) {
-  body { padding-bottom: 84px; }
+  body.has-nav { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
 
   .btn-random-label,
   .logo-text { display: none; }
@@ -652,9 +710,19 @@ body {
   .topbar-inner {
     padding: 0 10px;
     gap: 6px;
+    flex-wrap: wrap;
   }
   .logo { font-size: 15px; }
   .logo-icon { width: 30px; height: 30px; font-size: 14px; }
+
+  /* Le groupe de contrôles passe en dessous */
+  .topbar-center {
+    width: 100%;
+    max-width: none;
+    order: 3;
+    gap: 6px;
+    margin-left: 0;
+  }
 
   .search-wrap {
     flex: 1;
@@ -697,18 +765,15 @@ body {
   }
   .btn-theme { width: 38px; height: 38px; font-size: 15px; }
 
-  /* Le wrapper devient statique, le panneau passe en fixed pleine largeur */
-  .filters-anchor {
-    position: static;
-  }
-
+  /* Panneau filtres : pleine largeur, ancré sous la topbar (hauteur réelle) */
+  .filters-anchor { position: static; }
   .filters-panel {
     position: fixed;
-    top: 60px;
+    top: calc(var(--topbar-height, 60px) + 8px);
     right: 10px;
     left: 10px;
     width: auto;
-    max-height: calc(100vh - 80px);
+    max-height: calc(100vh - var(--topbar-height, 60px) - 24px);
   }
 
   /* Layout principal : 1 colonne */
@@ -741,7 +806,7 @@ body {
 
   .container { padding: 0 12px; margin: 16px auto; }
 
-  .nav-bar { padding: 10px 12px; }
+  .nav-bar { padding: 10px 12px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
   .nav-btn { padding: 9px 14px; font-size: 12px; }
   .nav-center { font-size: 12px; }
 }
@@ -769,7 +834,6 @@ body {
   border-bottom-color: #2a2a38;
 }
 
-/* Recherche en dark */
 [data-theme="dark"] .search-input {
   background: #252530;
   border-color: #2e2e3c;
@@ -853,7 +917,6 @@ body {
   color: #e07a6a;
 }
 
-/* Filtres personnalisés en dark */
 [data-theme="dark"] .filters-sep { background: #2a2a38; }
 
 [data-theme="dark"] .custom-chip {
@@ -955,3 +1018,8 @@ body {
 [data-theme="dark"] .loading-screen { background: #16161e; }
 [data-theme="dark"] .loading-text { color: #8888a0; }
 [data-theme="dark"] .spinner { border-color: #2e2e3c; border-top-color: #5a8fe6; }
+
+[data-theme="dark"] .toast {
+  background: rgba(240, 240, 245, 0.95);
+  color: #1a1a1a;
+}
