@@ -39,8 +39,8 @@
 // Pour revenir aux fichiers locaux, commenter ces 2 lignes et décommenter
 // celles du bloc "VERSION LOCALE" plus bas.
 
-const CDB_EN_URL = 'https://raw.githubusercontent.com/Mazorn/VAACT-Very-Accurate-Anime-Character-Tournament-/main/VAACT_S1.cdb';
-const CDB_FR_URL = 'https://raw.githubusercontent.com/kevinraphael95/VAACT-patch-fr/main/VAACT_S1.cdb';
+const CDB_EN_URL = 'https://raw.githubusercontent.com/Mazorn/VAACT-Very-Accurate-Anime-Character-Tournament-/main/VAACT%20S1.cdb';
+const CDB_FR_URL = 'https://raw.githubusercontent.com/kevinraphael95/VAACT-patch-fr/main/VAACT%20S1.cdb';
 
 /* === VERSION LOCALE (désactivée) ===
  * Si un jour GitHub change ses règles CORS, si un repo est supprimé, ou si
