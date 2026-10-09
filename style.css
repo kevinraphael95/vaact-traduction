@@ -42,13 +42,13 @@ body {
   color: #1a1a1a;
   font-size: 14px;
   line-height: 1.5;
+  /* Évite le rebond élastique qui ferait bouger la nav-bar fixe en haut/bas. */
+  overscroll-behavior-y: none;
+  /* Place pour la nav-bar fixe. Fixe, pas conditionnel : la nav-bar est
+   * cachée au tout début mais apparaît dès que les cartes sont chargées,
+   * et Firefox mobile gère mal les changements dynamiques de padding. */
+  padding-bottom: 76px;
 }
-
-/* Le padding-bottom (place pour la nav-bar fixe) n'est appliqué QUE quand
- * la nav-bar est visible. Sur l'écran de chargement, elle ne l'est pas,
- * donc pas de trou inutile en bas de page. Le JS ajoute .has-nav dès que
- * les cartes sont chargées. */
-body.has-nav { padding-bottom: 80px; }
 
 /* ============================================================================
  * 2. LOADING
@@ -753,10 +753,10 @@ body.has-nav { padding-bottom: 80px; }
   right: 0;
   background: #fff;
   border-top: 1px solid #e0e4e8;
-  padding: 12px 20px;
-  /* Respecte la safe-area (encoche iPhone en bas) : évite que les boutons
-   * soient mangés par la barre de geste iOS. */
-  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  /* Padding bottom fixe : env(safe-area-inset-bottom) retourne 0 sur
+   * Firefox Android, et une valeur plus grande rapproche les boutons du
+   * bord bas de l'écran (là où la barre Firefox se trouve). */
+  padding: 12px 20px 16px;
   z-index: 20;
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
 }
@@ -781,6 +781,13 @@ body.has-nav { padding-bottom: 80px; }
   display: flex;
   align-items: center;
   gap: 6px;
+  /* Tap instantané au doigt : sans ça, le navigateur attend 300ms pour
+   * distinguer un simple tap d'un double-tap (zoom). */
+  touch-action: manipulation;
+  /* Retire le flash bleu au tap sur Android. */
+  -webkit-tap-highlight-color: transparent;
+  /* Taille tactile minimale recommandée (Apple / Google). */
+  min-height: 44px;
 }
 .nav-btn:hover:not(:disabled) {
   border-color: #4a7fd6;
@@ -808,7 +815,10 @@ body.has-nav { padding-bottom: 80px; }
  * 17. RESPONSIVE — 800px (mobile / tablette portrait)
  * ============================================================================ */
 @media (max-width: 800px) {
-  body.has-nav { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+  /* Padding fixe (pas de env()) : Firefox Android ne supporte pas
+   * safe-area-inset-bottom. 74px laisse juste la place pour la nav-bar
+   * (~64px) + un peu de marge. */
+  body { padding-bottom: 74px; }
 
   /* On masque les textes des boutons, on ne garde que les icônes. */
   .btn-random-label,
@@ -923,7 +933,8 @@ body.has-nav { padding-bottom: 80px; }
 
   .container { padding: 0 12px; margin: 16px auto; }
 
-  .nav-bar { padding: 10px 12px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+  /* Nav-bar mobile : padding fixe, pas de env(). */
+  .nav-bar { padding: 10px 12px 14px; }
   .nav-btn { padding: 9px 14px; font-size: 12px; }
   .nav-center { font-size: 12px; }
 }
